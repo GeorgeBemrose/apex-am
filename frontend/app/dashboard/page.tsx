@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../context/AuthContext";
+import RootAdminDashboard from "../../components/root-admin-dashboard";
+import SuperAccountantDashboard from "../../components/super-accountant-dashboard";
 
 export default function Home() {
     const { user, login, logout } = useAuth();
@@ -15,31 +17,27 @@ export default function Home() {
     }, [user, router])
 
     const userRole = user ? user.role : null;
-
+    const userName = user ? user.name : null;
     return (
         <>
-            {user ? (
+            {userName && (
                 <p className="text-black">
                     Hello {user.name}, you have role: {user.role}
-                </p>
-            ) : (
-                <p className="text-black"> Please log in</p>
-            )}
+                </p>)}
+
             {userRole && (
-                <p className="text-black">
-                    {(() => {
-                        switch (userRole) {
-                            case 'root_admin':
-                                return 'You have ROOT_ADMIN access.';
-                            case 'super_accountant':
-                                return 'You have SUPER_ACCOUNTANT access.';
-                            case 'accountant':
-                                return 'You have ACCOUNTANT access.';
-                            default:
-                                return 'Role not recognized.';
-                        }
-                    })()}
-                </p>
+                (() => {
+                    switch (userRole) {
+                        case 'root_admin':
+                            return (<RootAdminDashboard />);
+                        case 'super_accountant':
+                            return (<SuperAccountantDashboard/>);
+                        case 'accountant':
+                            return (<p className="text-black">You have ACCOUNTANT access.</p>);
+                        default:
+                            return (<p className="text-black">Role not recognized.</p>);
+                    }
+                })()
             )}
         </>
     );

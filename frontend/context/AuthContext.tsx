@@ -35,6 +35,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const authenticatedUser = await authenticateUser(email, password);
             if (authenticatedUser) {
                 setUser(authenticatedUser);
+                setUserRole(authenticatedUser.role);
+                localStorage.setItem("user", JSON.stringify(authenticatedUser));
+                localStorage.setItem("userRole", authenticatedUser.role);
                 return true;
             }
             return false;
@@ -44,7 +47,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = () => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("userRole");
         setUser(null);
+        setUserRole("");
     };
 
     return (
