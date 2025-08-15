@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useContext, ReactNode } from "react";
+import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { authenticateUser } from "../auth/mockAuth";
 
 type AuthContextType = {
@@ -14,7 +14,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<any | null>(null);
+    const [userRole, setUserRole] = useState("");
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const savedUser = localStorage.getItem("user");
+        const savedRole = localStorage.getItem("userRole");
+    
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+        if (savedRole) {
+          setUserRole(savedRole);
+        }
+      }, []);
 
     const login = async (email: string, password: string): Promise<boolean> => {
         setLoading(true);
