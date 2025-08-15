@@ -1,0 +1,50 @@
+"use client";
+
+import { createContext, useState, useContext, ReactNode } from "react";
+import { authenticateUser } from "../auth/mockAuth";
+
+type AuthContextType = {
+    user: any | null;
+    login: (email: string, password: string) => Promise<boolean>;
+    logout: () => void;
+    loading: boolean;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<any | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const login = async (email: string, password: string): Promise<boolean> => {
+        setLoading(true);
+        try {
+            const authenticatedUser = await authenticateUser(email, password);
+            if (authenticatedUser) {
+                setUser(authenticatedUser);
+                return true;
+            }
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const logout = () => {
+        setUser(null);
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
+};
