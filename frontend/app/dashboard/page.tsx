@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "../../context/AuthContext";
 import RootAdminDashboard from "../../components/root-admin-dashboard";
 import SuperAccountantDashboard from "../../components/super-accountant-dashboard";
+import AccountantDashboard from "@/components/accountant-dashboard";
 
 export default function Home() {
     const { user, login, logout } = useAuth();
@@ -33,7 +34,7 @@ export default function Home() {
                         case 'super_accountant':
                             return (<SuperAccountantDashboard/>);
                         case 'accountant':
-                            return (<p className="text-black">You have ACCOUNTANT access.</p>);
+                            return (<AccountantDashboard/>);
                         default:
                             return (<p className="text-black">Role not recognized.</p>);
                     }
