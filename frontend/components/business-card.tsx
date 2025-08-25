@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DocumentIcon, CurrencyDollarIcon, CheckCircleIcon, DocumentCurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import FinanceCard from './finance-card';
 import { Business } from '@/types/business';
+import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
+import { Button } from './ui/button';
+import AccountantsDialog from './accountant-dialog';
+
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 interface BusinessCardProps {
     index: number;
@@ -10,6 +19,17 @@ interface BusinessCardProps {
 }
 
 const BusinessCard: React.FC<BusinessCardProps> = ({ index, business }) => {
+    const { user } = useAuth();
+    const [openDialog, setOpenDialog] = useState(false);
+
+    const handleClickOpen = () => {
+        setOpenDialog(true);
+    };
+
+    const handleClose = () => {
+        setOpenDialog(false);
+    };
+
     return (
         <Card key={index} className="shadow-lg">
             <CardHeader>
@@ -52,6 +72,12 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ index, business }) => {
                     <FinanceCard metric={business.financialMetrics.netProfit} percentageChange={business.financialMetrics.percentageChangeNetProfit} title="Net Profit" />
                     <FinanceCard metric={business.financialMetrics.totalCosts} percentageChange={business.financialMetrics.percentageChangeTotalCosts} title="Total Costs" />
                 </div>
+
+                <Button variant='secondary' className='mt-4 col-span-2 w-1/2 mx-auto' onClick={handleClickOpen}>
+                    View Accountants
+                </Button>
+
+                <AccountantsDialog open={openDialog} onClose={handleClose} name={business.name}/>
             </CardContent>
         </Card>
     );

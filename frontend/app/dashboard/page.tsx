@@ -1,12 +1,13 @@
 "use client";
-// / Importing the LoginForm component
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../context/AuthContext";
-import RootAdminDashboard from "../../components/root-admin-dashboard";
-import SuperAccountantDashboard from "../../components/super-accountant-dashboard";
-import AccountantDashboard from "@/components/accountant-dashboard";
-
+import ManageSuperDashboard from "../../components/manage-super-dashboard";
+import ManageAccountantsDashboard from "../../components/manage-accountants-dashboard";
+import BusinessDashboard from "@/components/business-dashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import businesses from '@/test/testData/businesses.json';
 export default function Home() {
     const { user, login, logout } = useAuth();
     const router = useRouter()
@@ -17,29 +18,48 @@ export default function Home() {
         }
     }, [user, router])
 
-    const userRole = user ? user.role : null;
-    const userName = user ? user.name : null;
-    return (
-        <>
-            {userName && (
-                <p className="text-black">
-                    Hello {user.name}, you have role: {user.role}
-                </p>)}
+    type UserRole = "root_admin" | "super_accountant" | "accountant";
 
-            {userRole && (
-                (() => {
-                    switch (userRole) {
-                        case 'root_admin':
-                            return (<RootAdminDashboard />);
-                        case 'super_accountant':
-                            return (<SuperAccountantDashboard/>);
-                        case 'accountant':
-                            return (<AccountantDashboard/>);
-                        default:
-                            return (<p className="text-black">Role not recognized.</p>);
-                    }
-                })()
+    const userRole: UserRole | null = user ? user.role as UserRole : null;
+    const userName = user ? user.name : null;
+    
+    const tabsByRole = {
+        root_admin: [
+            { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
+            { value: "manageAccountants", label: "Manage Accountants", content: <ManageAccountantsDashboard /> },
+            { value: "manageSuper", label: "Manage Super Accountants", content: <ManageSuperDashboard /> },
+        ],
+        super_accountant: [
+            { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
+            { value: "manageAccountants", label: "Manage Accountants", content: <ManageAccountantsDashboard /> },
+        ],
+        accountant: [
+            { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
+        ],
+    };
+
+    const userTabs = userRole ? tabsByRole[userRole] : null;
+
+    return (
+        <div className="w-flex w-full flex-col gap-6 p-4">
+            {userRole && userTabs ? (
+                <Tabs defaultValue={userTabs[0].value}>
+                    <TabsList>
+                        {userTabs.map((tab) => (
+                            <TabsTrigger key={tab.value} value={tab.value}>
+                                {tab.label}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                    {userTabs.map((tab) => (
+                        <TabsContent key={tab.value} value={tab.value}>
+                            {tab.content}
+                        </TabsContent>
+                    ))}
+                </Tabs>
+            ) : (
+                <p className="text-black">404: Role not recognized.</p>
             )}
-        </>
+        </div>
     );
 }
