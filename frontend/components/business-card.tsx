@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DocumentIcon, CurrencyDollarIcon, CheckCircleIcon, DocumentCurrencyDollarIcon } from '@heroicons/react/24/outline';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from './ui/card';
 import FinanceCard from './finance-card';
-import { Business } from '@/types/business';
-import { useAuth } from '@/context/AuthContext';
+import { Business } from '../types/business';
+import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import AccountantsDialog from './accountant-dialog';

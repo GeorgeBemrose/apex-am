@@ -11,18 +11,13 @@ const LoginForm = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [error, setError] = useState(false)
-    const { login, loading } = useAuth()
+    const { login, loading, error } = useAuth()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setError(false)
-
+        
         const success = await login(email, password)
-        if (!success) {
-            // TODO: Replace with real error handling in the UI
-            setError(true);
-        }
+        // Error handling is now managed by AuthContext
     }
 
     return (
@@ -57,15 +52,17 @@ const LoginForm = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeSlashIcon className="h-5 w-5" />}
                 </button>
             </div>
+            
             {error && (
                 <div className="flex items-center gap-2 text-red-500 mt-2">
                     <ExclamationCircleIcon className="h-5 w-5" />
-                    <span>Wrong email or password</span>
+                    <span>{error}</span>
                 </div>
             )}
+            
             <div className="text-left">
                 <a
                     href="#"
@@ -81,10 +78,16 @@ const LoginForm = () => {
 
             <button
                 type="submit"
-                className="w-full h-16 text-lg font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-full transition-colors"
+                disabled={loading}
+                className={`w-full h-16 text-lg font-medium text-white rounded-full transition-colors ${
+                    loading 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-slate-800 hover:bg-slate-900'
+                }`}
             >
-                Login
+                {loading ? 'Logging in...' : 'Login'}
             </button>
+            
             <div className="text-center text-sm text-black">
                 Don&apos;t have an account?{" "}
                 <a href="#" className="underline underline-offset-4">

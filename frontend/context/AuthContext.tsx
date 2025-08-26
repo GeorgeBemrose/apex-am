@@ -1,45 +1,67 @@
 "use client";
 
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
-import { authenticateUser } from "../auth/mockAuth";
+import { authAPI, User, LoginCredentials } from "../lib/api";
 
 type AuthContextType = {
-    user: any | null;
+    user: User | null;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
     loading: boolean;
+    error: string | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<any | null>(null);
-    const [userRole, setUserRole] = useState("");
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    // Check for existing token and fetch user data on mount
     useEffect(() => {
-        const savedUser = localStorage.getItem("user");
-        const savedRole = localStorage.getItem("userRole");
-    
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            fetchCurrentUser();
         }
-        if (savedRole) {
-          setUserRole(savedRole);
+    }, []);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const userData = await authAPI.getCurrentUser();
+            setUser(userData);
+            setError(null);
+        } catch (err) {
+            console.error('Failed to fetch current user:', err);
+            // Token might be invalid, clear it
+            localStorage.removeItem('access_token');
+            setUser(null);
         }
-      }, []);
+    };
 
     const login = async (email: string, password: string): Promise<boolean> => {
         setLoading(true);
+        setError(null);
+        
         try {
-            const authenticatedUser = await authenticateUser(email, password);
-            if (authenticatedUser) {
-                setUser(authenticatedUser);
-                setUserRole(authenticatedUser.role);
-                localStorage.setItem("user", JSON.stringify(authenticatedUser));
-                localStorage.setItem("userRole", authenticatedUser.role);
-                return true;
-            }
+            const credentials: LoginCredentials = {
+                email: email,
+                password: password
+            };
+            
+            const authResponse = await authAPI.login(credentials);
+            
+            // Store the token
+            localStorage.setItem('access_token', authResponse.access_token);
+            
+            // Fetch user data
+            await fetchCurrentUser();
+            
+            return true;
+        } catch (err) {
+            console.error('Login failed:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Login failed';
+            setError(errorMessage);
             return false;
         } finally {
             setLoading(false);
@@ -47,14 +69,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("userRole");
+        localStorage.removeItem('access_token');
         setUser(null);
-        setUserRole("");
+        setError(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, error }}>
             {children}
         </AuthContext.Provider>
     );
@@ -63,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
+        throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
 };

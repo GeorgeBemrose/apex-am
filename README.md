@@ -19,3 +19,20 @@ Super Accountant: super@example.com
 Root Admin: admin@example.com
 
 Password: "password" for all accounts
+
+
+# Backend
+Create python virtual environment
+```python
+python -m venv .venv
+```
+
+Activate virtual env
+```python
+source .venv/bin/activate
+```
+
+Install packages
+```python
+pip install -r requirements.txt
+```

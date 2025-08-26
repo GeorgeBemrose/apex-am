@@ -9,9 +9,10 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from "./ui/table"
 import { TrashIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
+
 interface Accountant {
     id: string;
     firstName: string;
