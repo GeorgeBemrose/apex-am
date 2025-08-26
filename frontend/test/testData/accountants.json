@@ -1,0 +1,23 @@
+[
+    {
+        "id": "1",
+        "firstName": "John",
+        "lastName": "Smith",
+        "email": "accountant@example.com",
+        "role": "root_admin"
+    },
+    {
+        "id": "2",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "email": "j.doe@example.com",
+        "role": "super_accountant"
+    },
+    {
+        "id": "3",
+        "firstName": "Peter",
+        "lastName": "Jones",
+        "email": "p.jones@example.com",
+        "role": "accountant"
+    }
+]

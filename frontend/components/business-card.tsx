@@ -8,11 +8,6 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import AccountantsDialog from './accountant-dialog';
 
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-
 interface BusinessCardProps {
     index: number;
     business: Business
@@ -74,10 +69,10 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ index, business }) => {
                 </div>
 
                 <Button variant='secondary' className='mt-4 col-span-2 w-1/2 mx-auto' onClick={handleClickOpen}>
-                    View Accountants
+                    View { user.role === "root_admin" || user.role === "super_accountant" ? "& Edit" : ""} Accountants
                 </Button>
 
-                <AccountantsDialog open={openDialog} onClose={handleClose} name={business.name}/>
+                <AccountantsDialog open={openDialog} onClose={handleClose} businessName={business.name} businessId={business.id} accountants={business.accountants}/>
             </CardContent>
         </Card>
     );

@@ -9,7 +9,7 @@ export function Navigation() {
   const pathname = usePathname();
 
   if (pathname === "/login") {
-    return null; // Don't render navigation on the login page
+    return null;
   }
 
   return (
@@ -22,15 +22,21 @@ export function Navigation() {
       </div>
 
       <div className="hidden md:flex items-center space-x-8">
-        <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
-          About us
-        </Link>
-        <Link href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors">
-          Blog
-        </Link>
-        <Link href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">
-          Contact
-        </Link>
+        {user && pathname !== "/" ? 
+        null 
+        :
+          (<>
+            <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
+              About us
+            </Link>
+            <Link href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Blog
+            </Link>
+            <Link href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Contact
+            </Link>
+          </>)
+        }
       </div>
 
       <div className="flex items-center space-x-4">

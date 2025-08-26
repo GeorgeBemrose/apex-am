@@ -1,4 +1,7 @@
+import { Accountant } from "./accountant";
+
 export interface Business {
+    id: string;
     name: string;
     financialMetrics: {
         revenue: number;
@@ -16,4 +19,5 @@ export interface Business {
         pendingApprovals: number;
         accountingYearEnd: string;
     };
+    accountants: Array<Accountant>;
 }

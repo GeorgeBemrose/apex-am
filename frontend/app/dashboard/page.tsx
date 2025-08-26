@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../context/AuthContext";
 import ManageSuperDashboard from "../../components/manage-super-dashboard";
-import ManageAccountantsDashboard from "../../components/manage-accountants-dashboard";
 import BusinessDashboard from "@/components/business-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import businesses from '@/test/testData/businesses.json';
@@ -26,12 +25,10 @@ export default function Home() {
     const tabsByRole = {
         root_admin: [
             { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
-            { value: "manageAccountants", label: "Manage Accountants", content: <ManageAccountantsDashboard /> },
             { value: "manageSuper", label: "Manage Super Accountants", content: <ManageSuperDashboard /> },
         ],
         super_accountant: [
-            { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
-            { value: "manageAccountants", label: "Manage Accountants", content: <ManageAccountantsDashboard /> },
+            { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> }
         ],
         accountant: [
             { value: "businesses", label: "Businesses", content: <BusinessDashboard businesses={businesses}/> },
