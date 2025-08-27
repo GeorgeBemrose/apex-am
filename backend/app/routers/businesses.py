@@ -1,220 +1,114 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 from app.database import get_db
-from app.auth import get_current_user, require_root_admin, require_super_accountant_or_root, require_accountant_or_higher
-from app.models import User
-from app.schemas import BusinessCreate, BusinessUpdate, BusinessResponse
-from app import crud
+from app.auth import get_current_user, require_super_accountant_or_root
+from app import crud, schemas
+from app.models import User, Business
 
 router = APIRouter()
 
-@router.post("/")
-async def create_business(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_root_admin)
-):
-    """Create a new business (Root Admin only)."""
-    try:
-        body = await request.json()
-        schema = BusinessCreate()
-        business_data = schema.load(body)
-        return crud.create_business(db=db, business_data=business_data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid data: {str(e)}"
-        )
-
 @router.get("/")
 async def get_businesses(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Get list of businesses based on user role."""
-    if current_user.role == "accountant":
-        # Accountants can only see their own businesses
-        businesses = crud.get_businesses_by_owner(db=db, owner_id=current_user.id, skip=skip, limit=limit)
+    if current_user.role == "root_admin":
+        businesses = crud.get_businesses(db, skip=skip, limit=limit)
     elif current_user.role == "super_accountant":
-        # Super accountants can see businesses of their managed accountants
-        accountant = crud.get_accountant_by_user_id(db=db, user_id=current_user.id)
-        if not accountant:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Accountant record not found"
-            )
-        
-        # Get all businesses managed by accountants under this super accountant
-        managed_accountants = crud.get_accountants_by_super(db=db, super_accountant_id=current_user.id)
-        all_businesses = []
-        for acc in managed_accountants:
-            businesses = crud.get_businesses_by_accountant(db=db, accountant_id=acc.id)
-            all_businesses.extend(businesses)
-        
-        # Apply pagination
-        businesses = all_businesses[skip:skip + limit]
+        businesses = crud.get_businesses(db, skip=skip, limit=limit)
     else:
-        # Root admin can see all businesses
-        businesses = crud.get_businesses(db=db, skip=skip, limit=limit)
+        businesses = crud.get_user_businesses(db, current_user.id)
     
-    schema = BusinessResponse(many=True)
-    return schema.dump(businesses)
-
-@router.get("/my-businesses")
-async def get_my_businesses(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get businesses owned by the current user."""
-    businesses = crud.get_businesses_by_owner(db=db, owner_id=current_user.id, skip=skip, limit=limit)
-    schema = BusinessResponse(many=True)
-    return schema.dump(businesses)
+    return businesses
 
 @router.get("/{business_id}")
 async def get_business(
-    business_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    business_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Get a specific business."""
-    business = crud.get_business(db=db, business_id=business_id)
+    business = crud.get_business(db, business_id)
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
     
     # Check permissions
-    if current_user.role == "accountant":
-        if business.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Can only view own businesses"
-            )
-    elif current_user.role == "super_accountant":
-        # Check if business belongs to a managed accountant
-        if business.accountant_id:
-            accountant = crud.get_accountant(db=db, accountant_id=business.accountant_id)
-            if accountant.super_accountant_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Can only view businesses of managed accountants"
-                )
+    if current_user.role == "accountant" and business.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    schema = BusinessResponse()
-    return schema.dump(business)
+    return business
+
+@router.post("/")
+async def create_business(
+    business_data: schemas.BusinessCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role not in ["root_admin", "super_accountant"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    business_data_dict = business_data.model_dump()
+    business_data_dict["owner_id"] = current_user.id
+    
+    business = crud.create_business(db, business_data_dict)
+    return business
 
 @router.put("/{business_id}")
 async def update_business(
-    business_id: int,
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    business_id: str,
+    business_data: schemas.BusinessCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Update a business."""
-    business = crud.get_business(db=db, business_id=business_id)
+    business = crud.get_business(db, business_id)
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
     
     # Check permissions
-    if current_user.role == "accountant":
-        if business.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Can only update own businesses"
-            )
-    elif current_user.role == "super_accountant":
-        # Check if business belongs to a managed accountant
-        if business.accountant_id:
-            accountant = crud.get_accountant(db=db, accountant_id=business.accountant_id)
-            if accountant.super_accountant_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Can only update businesses of managed accountants"
-                )
+    if current_user.role == "accountant" and business.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    try:
-        body = await request.json()
-        schema = BusinessUpdate()
-        business_update_data = schema.load(body)
-        updated_business = crud.update_business(db=db, business_id=business_id, business_update_data=business_update_data)
-        response_schema = BusinessResponse()
-        return response_schema.dump(updated_business)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid data: {str(e)}"
-        )
+    business_data_dict = business_data.model_dump()
+    updated_business = crud.update_business(db, business_id, business_data_dict)
+    
+    if not updated_business:
+        raise HTTPException(status_code=500, detail="Failed to update business")
+    
+    return updated_business
 
 @router.delete("/{business_id}")
 async def delete_business(
-    business_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_root_admin)
+    business_id: str,
+    current_user: User = Depends(require_super_accountant_or_root),
+    db: Session = Depends(get_db)
 ):
-    """Delete a business (Root Admin only)."""
-    crud.delete_business(db=db, business_id=business_id)
+    business = crud.get_business(db, business_id)
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    success = crud.delete_business(db, business_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete business")
+    
     return {"message": "Business deleted successfully"}
 
 @router.post("/{business_id}/assign-accountant")
 async def assign_accountant_to_business(
-    business_id: int,
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_super_accountant_or_root)
+    business_id: str,
+    request: schemas.AssignAccountantRequest,
+    current_user: User = Depends(require_super_accountant_or_root),
+    db: Session = Depends(get_db)
 ):
-    """Assign an accountant to manage a business."""
-    business = crud.get_business(db=db, business_id=business_id)
-    
-    # Check if super accountant can assign to this business
-    if current_user.role == "super_accountant":
-        if business.accountant_id:
-            accountant = crud.get_accountant(db=db, accountant_id=business.accountant_id)
-            if accountant.super_accountant_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Can only assign accountants to businesses you manage"
-                )
-    
-    try:
-        body = await request.json()
-        accountant_id = body.get("accountant_id")
-        if not accountant_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="accountant_id is required"
-            )
-        
-        # Update business with new accountant
-        business_update_data = {"accountant_id": accountant_id}
-        updated_business = crud.update_business(db=db, business_id=business_id, business_update_data=business_update_data)
-        response_schema = BusinessResponse()
-        return response_schema.dump(updated_business)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid data: {str(e)}"
-        )
+    updated_business = crud.assign_accountant_to_business(db, business_id, request.accountant_id)
+    return {"message": "Accountant assigned successfully"}
 
 @router.post("/{business_id}/remove-accountant")
 async def remove_accountant_from_business(
-    business_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_super_accountant_or_root)
+    business_id: str,
+    request: schemas.AssignAccountantRequest,
+    current_user: User = Depends(require_super_accountant_or_root),
+    db: Session = Depends(get_db)
 ):
-    """Remove accountant assignment from a business."""
-    business = crud.get_business(db=db, business_id=business_id)
-    
-    # Check if super accountant can remove from this business
-    if current_user.role == "super_accountant":
-        if business.accountant_id:
-            accountant = crud.get_accountant(db=db, accountant_id=business.accountant_id)
-            if accountant.super_accountant_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Can only remove accountants from businesses you manage"
-                )
-    
-    # Remove accountant assignment
-    business_update_data = {"accountant_id": None}
-    updated_business = crud.update_business(db=db, business_id=business_id, business_update_data=business_update_data)
-    response_schema = BusinessResponse()
-    return response_schema.dump(updated_business)
+    updated_business = crud.remove_accountant_from_business(db, business_id, request.accountant_id)
+    return {"message": "Accountant removed successfully"}

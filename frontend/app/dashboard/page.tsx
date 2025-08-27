@@ -3,10 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { businessesAPI, Business } from '../../lib/api';
+import { businessesAPI, accountantsAPI } from '../../lib/api';
+import { Business } from '../../types';
 import BusinessCard from '../../components/business-card';
 import ManageSuperDashboard from '../../components/manage-super-dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Roles } from '../../lib/roles';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -17,6 +19,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
+  const [activeTab, setActiveTab] = useState("businesses");
+  const [accountants, setAccountants] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -24,7 +28,9 @@ export default function DashboardPage() {
       return;
     }
 
+    console.log('useEffect triggered, user:', user);
     fetchBusinesses();
+    fetchAccountants();
   }, [user, router]);
 
   const fetchBusinesses = async () => {
@@ -34,10 +40,10 @@ export default function DashboardPage() {
       setLoading(true);
       let businessesData: Business[];
 
-      if (user.role === 'root_admin') {
+      if (user.role === Roles.ROOT_ADMIN) {
         // Root admin can see all businesses
         businessesData = await businessesAPI.getAll();
-      } else if (user.role === 'super_accountant') {
+      } else if (user.role === Roles.SUPER_ACCOUNTANT) {
         // Super accountant can see businesses they manage
         businessesData = await businessesAPI.getAll();
       } else {
@@ -52,6 +58,18 @@ export default function DashboardPage() {
       setError('Failed to load businesses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAccountants = async () => {
+    if (!user) return;
+    
+    try {
+      const accountantsData = await accountantsAPI.getAll();
+      console.log('Fetched accountants:', accountantsData);
+      setAccountants(accountantsData);
+    } catch (err) {
+      console.error('Failed to fetch accountants:', err);
     }
   };
 
@@ -80,97 +98,30 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Convert backend data to frontend format for compatibility
-  const convertBusinessForFrontend = (business: Business) => {
-    return {
-      id: business.id.toString(),
-      name: business.name,
-      financialMetrics: business.financial_metrics ? {
-        revenue: business.financial_metrics.revenue,
-        grossProfit: business.financial_metrics.gross_profit,
-        netProfit: business.financial_metrics.net_profit,
-        totalCosts: business.financial_metrics.total_costs,
-        percentageChangeRevenue: business.financial_metrics.percentage_change_revenue,
-        percentageChangeGrossProfit: business.financial_metrics.percentage_change_gross_profit,
-        percentageChangeNetProfit: business.financial_metrics.percentage_change_net_profit,
-        percentageChangeTotalCosts: business.financial_metrics.percentage_change_total_costs
-      } : {
-        revenue: 0,
-        grossProfit: 0,
-        netProfit: 0,
-        totalCosts: 0,
-        percentageChangeRevenue: 0,
-        percentageChangeGrossProfit: 0,
-        percentageChangeNetProfit: 0,
-        percentageChangeTotalCosts: 0
-      },
-      metrics: business.metrics ? {
-        documentsDue: business.metrics.documents_due,
-        outstandingInvoices: business.metrics.outstanding_invoices,
-        pendingApprovals: business.metrics.pending_approvals,
-        accountingYearEnd: business.metrics.accounting_year_end
-      } : {
-        documentsDue: 0,
-        outstandingInvoices: 0,
-        pendingApprovals: 0,
-        accountingYearEnd: new Date().toLocaleDateString('en-GB')
-      },
-      accountants: business.accountant ? [{
-        id: business.accountant.id.toString(),
-        firstName: business.accountant.first_name || '',
-        lastName: business.accountant.last_name || '',
-        email: business.accountant.user?.email || ''
-      }] : []
-    };
-  };
-
-  const convertedBusinesses = currentBusinesses.map(convertBusinessForFrontend);
-
   // Define tabs based on user role
   const getTabsByRole = () => {
-    if (user.role === 'root_admin') {
+    if (user.role === Roles.ROOT_ADMIN) {
       return [
-        { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={convertedBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} /> },
+        { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={currentBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} onRefresh={fetchBusinesses} /> },
         { value: "manageSuper", label: "Manage Super Accountants", content: <ManageSuperDashboard /> },
       ];
-    } else if (user.role === 'super_accountant') {
+    } else if (user.role === Roles.SUPER_ACCOUNTANT || user.role === Roles.ACCOUNTANT) {
       return [
-        { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={convertedBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} /> }
-      ];
-    } else {
-      return [
-        { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={convertedBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} /> },
+        { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={currentBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} onRefresh={fetchBusinesses} /> }
       ];
     }
   };
 
-  const userTabs = getTabsByRole();
+  const userTabs = getTabsByRole() || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-            <span className="text-white font-bold text-sm">A</span>
-          </div>
-          <span className="text-xl font-semibold text-gray-900">Apex AM</span>
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-gray-600">Welcome, {user.email}</span>
-          <button onClick={handleLogout} className="text-gray-600 hover:text-gray-900 transition-colors">
-            Logout
-          </button>
-        </div>
-      </nav>
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             Dashboard
           </h1>
-          <p className="text-gray-600 mt-2">
-            Role: {user.role.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-          </p>
+          
         </div>
 
         {error && (
@@ -191,13 +142,9 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Businesses ({filteredBusinesses.length})
+              {activeTab === "businesses" ? `Businesses (${filteredBusinesses.length})` : `Accountants (${accountants?.length || 0})`}
             </h2>
-            {user.role === 'root_admin' && (
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
-                Add Business
-              </button>
-            )}
+            
           </div>
         </div>
 
@@ -212,15 +159,15 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : businesses.length > 0 ? (
-          <Tabs defaultValue={userTabs[0].value} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:grid-cols-2">
-              {userTabs.map((tab) => (
+              {userTabs?.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>
                   {tab.label}
                 </TabsTrigger>
               ))}
             </TabsList>
-            {userTabs.map((tab) => (
+            {userTabs?.map((tab) => (
               <TabsContent key={tab.value} value={tab.value} className="mt-6">
                 {tab.content}
               </TabsContent>
@@ -235,7 +182,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No businesses found</h3>
             <p className="text-gray-500">
-              {user.role === 'accountant' 
+              {user.role === Roles.ACCOUNTANT 
                 ? "You don't have any businesses assigned yet."
                 : "No businesses have been created yet."
               }
@@ -255,7 +202,8 @@ function BusinessDashboardContent({
   currentPage, 
   setCurrentPage, 
   totalPages, 
-  totalBusinesses 
+  totalBusinesses,
+  onRefresh
 }: { 
   businesses: any[];
   searchTerm: string;
@@ -264,11 +212,12 @@ function BusinessDashboardContent({
   setCurrentPage: (page: number) => void;
   totalPages: number;
   totalBusinesses: number;
+  onRefresh: () => void;
 }) {
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <div className="flex items-center space-x-4">
+      <div className="flex justify-center items-center space-x-4">
         <div className="flex-1 max-w-md">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -281,11 +230,11 @@ function BusinessDashboardContent({
               placeholder="Search businesses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 flex-shrink-0">
           {totalBusinesses} business{totalBusinesses !== 1 ? 'es' : ''} found
         </div>
       </div>
@@ -296,7 +245,8 @@ function BusinessDashboardContent({
           <BusinessCard 
             key={business.id} 
             index={index}
-            business={business} 
+            business={business}
+            onRefresh={onRefresh}
           />
         ))}
       </div>

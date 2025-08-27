@@ -1,0 +1,687 @@
+{
+	"info": {
+		"_postman_id": "apex-am-api-collection",
+		"name": "Apex AM API Collection",
+		"description": "Complete API collection for Apex AM backend including authentication, users, businesses, and accountants management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login with Form Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "{{admin_email}}",
+									"description": "Use email as username"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_password}}"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login endpoint to get access token using form data. Use email in the username field."
+					},
+					"response": []
+				},
+				{
+					"name": "Login with JSON",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login-json",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login-json"]
+						},
+						"description": "Alternative login endpoint using JSON with email and password."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints to obtain access tokens"
+		},
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Root endpoint with API information"
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Health check endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "Basic API information and health check endpoints"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"accountant\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/",
+							"host": ["{{base_url}}"],
+							"path": ["users", ""]
+						},
+						"description": "Create a new user (Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/?skip=0&limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["users", ""],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get list of users (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": ["{{base_url}}"],
+							"path": ["users", "me"]
+						},
+						"description": "Get current user information"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["users", "{{user_id}}"]
+						},
+						"description": "Get a specific user (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"updateduser\",\n  \"email\": \"updateduser@example.com\",\n  \"role\": \"accountant\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["users", "{{user_id}}"]
+						},
+						"description": "Update a user (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["users", "{{user_id}}"]
+						},
+						"description": "Delete a user (Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"new_role\": \"accountant\",\n  \"super_accountant_id\": \"{{super_accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}/assign-role",
+							"host": ["{{base_url}}"],
+							"path": ["users", "{{user_id}}", "assign-role"]
+						},
+						"description": "Assign a role to a user (Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Businesses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}/businesses?skip=0&limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["users", "{{user_id}}", "businesses"],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get businesses owned by a specific user"
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints"
+		},
+		{
+			"name": "Businesses",
+			"item": [
+				{
+					"name": "Get Businesses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/businesses/?skip=0&limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", ""],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get list of businesses (filtered by user role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Business by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/businesses/{{business_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", "{{business_id}}"]
+						},
+						"description": "Get a specific business"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Business",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"New Business\",\n  \"description\": \"A new business description\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/businesses/",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", ""]
+						},
+						"description": "Create a new business (Root Admin or Super Accountant only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Business",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Business Name\",\n  \"description\": \"Updated business description\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/businesses/{{business_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", "{{business_id}}"]
+						},
+						"description": "Update a business"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Business",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/businesses/{{business_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", "{{business_id}}"]
+						},
+						"description": "Delete a business (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Accountant to Business",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountant_id\": \"{{accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/businesses/{{business_id}}/assign-accountant",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", "{{business_id}}", "assign-accountant"]
+						},
+						"description": "Assign an accountant to a business (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Accountant from Business",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accountant_id\": \"{{accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/businesses/{{business_id}}/remove-accountant",
+							"host": ["{{base_url}}"],
+							"path": ["businesses", "{{business_id}}", "remove-accountant"]
+						},
+						"description": "Remove an accountant from a business (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Business management endpoints"
+		},
+		{
+			"name": "Accountants",
+			"item": [
+				{
+					"name": "Get Accountants",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accountants/?skip=0&limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", ""],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get list of accountants (filtered by user role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Accountant by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accountants/{{accountant_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", "{{accountant_id}}"]
+						},
+						"description": "Get a specific accountant"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Accountant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"is_super_accountant\": false,\n  \"super_accountant_id\": \"{{super_accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/accountants/",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", ""]
+						},
+						"description": "Create a new accountant (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Accountant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"first_name\": \"Updated John\",\n  \"last_name\": \"Updated Doe\",\n  \"is_super_accountant\": false,\n  \"super_accountant_id\": \"{{super_accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/accountants/{{accountant_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", "{{accountant_id}}"]
+						},
+						"description": "Update an accountant"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Accountant",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accountants/{{accountant_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", "{{accountant_id}}"]
+						},
+						"description": "Delete an accountant (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Super Accountant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"super_accountant_id\": \"{{super_accountant_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/accountants/{{accountant_id}}/assign-super",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", "{{accountant_id}}", "assign-super"]
+						},
+						"description": "Assign a super accountant to an accountant (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Super Accountant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accountants/{{accountant_id}}/remove-super",
+							"host": ["{{base_url}}"],
+							"path": ["accountants", "{{accountant_id}}", "remove-super"]
+						},
+						"description": "Remove a super accountant from an accountant (Super Accountant or Root Admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Accountant management endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-save access token from login responses",
+					"if (pm.response && pm.response.code === 200) {",
+					"    const responseJson = pm.response.json();",
+					"    if (responseJson.access_token) {",
+					"        pm.environment.set('access_token', responseJson.access_token);",
+					"        console.log('Access token saved automatically');",
+					"    }",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}

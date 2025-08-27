@@ -1,85 +1,8 @@
 // API service layer for communicating with FastAPI backend
+import { User, Business, Accountant, BusinessFinancialMetrics, BusinessMetrics, LoginCredentials, AuthResponse, ApiError } from '../types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 const API_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000');
-
-// Types
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface Business {
-  id: number;
-  name: string;
-  description?: string;
-  owner_id: number;
-  accountant_id?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at?: string;
-  owner: User;
-  accountant?: Accountant;
-  financial_metrics?: BusinessFinancialMetrics;
-  metrics?: BusinessMetrics;
-}
-
-export interface Accountant {
-  id: number;
-  user_id: number;
-  super_accountant_id?: number;
-  is_super_accountant: boolean;
-  first_name?: string;
-  last_name?: string;
-  created_at: string;
-  updated_at?: string;
-  user: User;
-}
-
-export interface BusinessFinancialMetrics {
-  id: number;
-  business_id: number;
-  revenue: number;
-  gross_profit: number;
-  net_profit: number;
-  total_costs: number;
-  percentage_change_revenue: number;
-  percentage_change_gross_profit: number;
-  percentage_change_net_profit: number;
-  percentage_change_total_costs: number;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface BusinessMetrics {
-  id: number;
-  business_id: number;
-  documents_due: number;
-  outstanding_invoices: number;
-  pending_approvals: number;
-  accounting_year_end: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  access_token: string;
-  token_type: string;
-}
-
-export interface ApiError {
-  detail: string;
-}
 
 // Utility functions
 const getAuthHeaders = (): HeadersInit => {
@@ -143,18 +66,18 @@ export const usersAPI = {
     return apiRequest<User[]>('/users/');
   },
 
-  getById: async (id: number): Promise<User> => {
+  getById: async (id: string): Promise<User> => {
     return apiRequest<User>(`/users/${id}`);
   },
 
-  update: async (id: number, userData: Partial<User>): Promise<User> => {
+  update: async (id: string, userData: Partial<User>): Promise<User> => {
     return apiRequest<User>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   },
 
-  assignRole: async (userId: number, roleData: { new_role: string; super_accountant_id?: number }): Promise<User> => {
+  assignRole: async (userId: string, roleData: { new_role: string; super_accountant_id?: string }): Promise<User> => {
     return apiRequest<User>(`/users/${userId}/assign-role`, {
       method: 'POST',
       body: JSON.stringify(roleData),
@@ -168,7 +91,7 @@ export const accountantsAPI = {
     return apiRequest<Accountant[]>('/accountants/');
   },
 
-  getById: async (id: number): Promise<Accountant> => {
+  getById: async (id: string): Promise<Accountant> => {
     return apiRequest<Accountant>(`/accountants/${id}`);
   },
 
@@ -179,27 +102,27 @@ export const accountantsAPI = {
     });
   },
 
-  update: async (id: number, accountantData: Partial<Accountant>): Promise<Accountant> => {
+  update: async (id: string, accountantData: Partial<Accountant>): Promise<Accountant> => {
     return apiRequest<Accountant>(`/accountants/${id}`, {
       method: 'PUT',
       body: JSON.stringify(accountantData),
     });
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     return apiRequest<void>(`/accountants/${id}`, {
       method: 'DELETE',
     });
   },
 
-  assignSuperAccountant: async (accountantId: number, superAccountantId: number): Promise<Accountant> => {
+  assignSuperAccountant: async (accountantId: string, superAccountantId: string): Promise<Accountant> => {
     return apiRequest<Accountant>(`/accountants/${accountantId}/assign-super`, {
       method: 'POST',
       body: JSON.stringify({ super_accountant_id: superAccountantId }),
     });
   },
 
-  removeSuperAccountant: async (accountantId: number): Promise<Accountant> => {
+  removeSuperAccountant: async (accountantId: string): Promise<Accountant> => {
     return apiRequest<Accountant>(`/accountants/${accountantId}/remove-super`, {
       method: 'POST',
     });
@@ -212,7 +135,7 @@ export const businessesAPI = {
     return apiRequest<Business[]>('/businesses/');
   },
 
-  getById: async (id: number): Promise<Business> => {
+  getById: async (id: string): Promise<Business> => {
     return apiRequest<Business>(`/businesses/${id}`);
   },
 
@@ -223,20 +146,20 @@ export const businessesAPI = {
     });
   },
 
-  update: async (id: number, businessData: Partial<Business>): Promise<Business> => {
+  update: async (id: string, businessData: Partial<Business>): Promise<Business> => {
     return apiRequest<Business>(`/businesses/${id}`, {
       method: 'PUT',
       body: JSON.stringify(businessData),
     });
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     return apiRequest<void>(`/businesses/${id}`, {
       method: 'DELETE',
     });
   },
 
-  getUserBusinesses: async (userId: number): Promise<Business[]> => {
+  getUserBusinesses: async (userId: string): Promise<Business[]> => {
     return apiRequest<Business[]>(`/users/${userId}/businesses`);
   },
 };

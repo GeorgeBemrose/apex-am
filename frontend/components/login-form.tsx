@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState } from "react"
 import { Button, TextField, Card, CardContent, Alert, InputAdornment, IconButton } from "@mui/material"
@@ -13,16 +13,18 @@ const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false)
     const { login, loading, error } = useAuth()
 
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        e.stopPropagation()
         
-        const success = await login(email, password)
-        // Error handling is now managed by AuthContext
+        await login(email, password)
     }
 
     return (
         <>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
             <div>
                 <input
                     id="email"
@@ -30,7 +32,12 @@ const LoginForm = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSubmit(e as any);
+                        }
+                    }}
                     className={`w-full h-16 px-6 text-lg text-black bg-gray-50 border-2 ${error ? "border-red-500" : "border-gray-300"
                         } rounded-full placeholder-gray-500 focus:outline-none focus:bg-white ${error ? "focus:border-red-500" : "focus:border-gray-400"
                         } hover:border-gray-400 transition-colors`}
@@ -43,7 +50,12 @@ const LoginForm = () => {
                     placeholder="Password*"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSubmit(e as any);
+                        }
+                    }}
                     className={`w-full h-16 px-6 pr-14 text-lg text-black bg-gray-50 border-2 ${error ? "border-red-500" : "border-gray-300"
                         } rounded-full placeholder-gray-500 focus:outline-none focus:bg-white ${error ? "focus:border-red-500" : "focus:border-gray-400"
                         } hover:border-gray-400 transition-colors`} />
@@ -77,8 +89,9 @@ const LoginForm = () => {
             </div>
 
             <button
-                type="submit"
+                type="button"
                 disabled={loading}
+                onClick={handleSubmit}
                 className={`w-full h-16 text-lg font-medium text-white rounded-full transition-colors ${
                     loading 
                         ? 'bg-gray-400 cursor-not-allowed' 
@@ -95,8 +108,8 @@ const LoginForm = () => {
                 </a>
             </div>
 
-        </form>
-        <div className="text-blue-600 text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
+        </div>
+        <div className="text-blue-600 *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
       </div>

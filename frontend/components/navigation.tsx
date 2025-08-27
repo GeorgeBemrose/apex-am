@@ -3,14 +3,44 @@
 import Link from "next/link"
 import { useAuth } from "../context/AuthContext";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { accountantsAPI } from "../lib/api";
+import { Roles } from "../lib/roles";
 
 export function Navigation() {
   const { user, logout } = useAuth()
   const pathname = usePathname();
+  const [firstName, setFirstName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      if (user && user.role !== Roles.ROOT_ADMIN) {
+        try {
+          // Get the accountant record to get the first name
+          const accountants = await accountantsAPI.getAll();
+          const userAccountant = accountants.find(acc => acc.user_id === user.id);
+          if (userAccountant?.first_name) {
+            setFirstName(userAccountant.first_name);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+        }
+      }
+    };
+
+    fetchUserInfo();
+  }, [user]);
 
   if (pathname === "/login") {
     return null;
   }
+
+  const getWelcomeMessage = () => {
+    if (!user) return "";
+    if (user.role === Roles.ROOT_ADMIN) return `Welcome, Admin`;
+    if (firstName) return `Welcome, ${firstName}`;
+    return `Welcome, ${user.username}`;
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
@@ -42,6 +72,7 @@ export function Navigation() {
       <div className="flex items-center space-x-4">
         {user ? (
           <div className="flex items-center space-x-4">
+            <span className="text-gray-600">{getWelcomeMessage()}</span>
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
               Dashboard
             </Link>

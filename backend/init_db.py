@@ -13,21 +13,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app.database import engine, SessionLocal
 from app.models import Base, User, Accountant, Business, BusinessFinancialMetrics, BusinessMetrics
 from app.auth import get_password_hash
+from sample_data.businesses import businesses_data
+from sample_data.accountants import accountants_data
 
-def load_frontend_test_data():
-    """Load test data from frontend test files."""
-    frontend_test_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'test', 'testData')
-    
-    # Load businesses data
-    businesses_file = os.path.join(frontend_test_dir, 'businesses.json')
-    with open(businesses_file, 'r') as f:
-        businesses_data = json.load(f)
-    
-    # Load accountants data
-    accountants_file = os.path.join(frontend_test_dir, 'accountants.json')
-    with open(accountants_file, 'r') as f:
-        accountants_data = json.load(f)
-    
+def create_sample_data():
+    """Create sample data for the application"""
     return businesses_data, accountants_data
 
 def parse_date(date_str):
@@ -42,15 +32,8 @@ def init_db():
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
     
-    print("Loading frontend test data...")
-    try:
-        businesses_data, accountants_data = load_frontend_test_data()
-    except FileNotFoundError as e:
-        print(f"Error: Could not find frontend test data files: {e}")
-        print("Make sure you're running this from the backend directory and frontend test data exists.")
-        return
-    
     print("Creating sample data...")
+    businesses_data, accountants_data = create_sample_data()
     db = SessionLocal()
     
     try:
@@ -59,108 +42,140 @@ def init_db():
             print("Database already contains data. Skipping initialization.")
             return
         
-        # Create users based on frontend accountant data
+        # Create users with the correct structure
         users = {}
         accountants = {}
         
-        for acc_data in accountants_data:
-            # Create user
+        # Create root admin
+        root_admin = User(
+            username="admin",
+            email="admin@example.com",
+            hashed_password=get_password_hash("password"),
+            role="root_admin",
+            is_active=True
+        )
+        db.add(root_admin)
+        db.flush()
+        users["root_admin"] = root_admin
+        
+        # Create super accountant
+        super_accountant = User(
+            username="super",
+            email="super@example.com",
+            hashed_password=get_password_hash("password"),
+            role="super_accountant",
+            is_active=True
+        )
+        db.add(super_accountant)
+        db.flush()
+        users["super_accountant"] = super_accountant
+        
+        # Use the accountants data directly since it's already in the correct format
+        regular_accountants = accountants_data
+        
+        # Create all regular accountant users
+        for acc_data in regular_accountants:
             user = User(
-                username=acc_data['email'].split('@')[0],
-                email=acc_data['email'],
+                username=acc_data["username"],
+                email=acc_data["email"],
                 hashed_password=get_password_hash("password"),
-                role=acc_data['role'],
+                role=acc_data["role"],
                 is_active=True
             )
             db.add(user)
-            db.flush()  # Get the ID without committing
-            
-            # Create accountant record
-            accountant = Accountant(
-                user_id=user.id,
-                first_name=acc_data['firstName'],
-                last_name=acc_data['lastName'],
-                is_super_accountant=(acc_data['role'] == 'super_accountant')
-            )
-            db.add(accountant)
             db.flush()
+            users[acc_data["username"]] = user
+        
+        # Create accountant records
+        # Root admin doesn't need an accountant record
+        
+        # Super accountant record
+        super_acc_record = Accountant(
+            user_id=super_accountant.id,
+            first_name="Super",
+            last_name="Accountant",
+            is_super_accountant=True
+        )
+        db.add(super_acc_record)
+        db.flush()
+        accountants["super"] = super_acc_record
+        
+        # Regular accountant records - assign some to super accountant, some independent
+        regular_acc_records = []
+        for i, acc_data in enumerate(regular_accountants):
+            # Alternate between assigning to super accountant and keeping independent
+            super_accountant_id = super_accountant.id if i % 2 == 0 else None
             
-            users[acc_data['id']] = user
-            accountants[acc_data['id']] = accountant
+            acc_record = Accountant(
+                user_id=users[acc_data["username"]].id,
+                first_name=acc_data["first_name"],
+                last_name=acc_data["last_name"],
+                is_super_accountant=False,
+                super_accountant_id=super_accountant_id
+            )
+            db.add(acc_record)
+            db.flush()
+            regular_acc_records.append(acc_record)
+            accountants[acc_data["username"]] = acc_record
         
-        # Set up super accountant relationships
-        # Find the super accountant
-        super_accountant = None
-        for acc_id, acc in accountants.items():
-            if acc.is_super_accountant:
-                super_accountant = acc
-                break
-        
-        # Assign regular accountants to super accountant
-        if super_accountant:
-            for acc_id, acc in accountants.items():
-                if not acc.is_super_accountant:
-                    acc.super_accountant_id = super_accountant.user_id
-        
-        # Create businesses from frontend data
-        for business_data in businesses_data:
-            # Find the first accountant assigned to this business
-            assigned_accountant = None
-            if business_data['accountants']:
-                first_acc_id = business_data['accountants'][0]['id']
-                if first_acc_id in accountants:
-                    assigned_accountant = accountants[first_acc_id]
+        # Create businesses and distribute them among different accountants
+        for i, business_data in enumerate(businesses_data):
+            # Distribute businesses among different accountants
+            assigned_accountant = regular_acc_records[i % len(regular_acc_records)]
             
-            # Create business
             business = Business(
                 name=business_data['name'],
-                description=f"Business {business_data['id']} from frontend test data",
-                owner_id=assigned_accountant.user_id if assigned_accountant else list(users.values())[0].id,
-                accountant_id=assigned_accountant.id if assigned_accountant else None,
+                description=business_data.get('description', ''),
+                owner_id=root_admin.id,  # Root admin owns all businesses
+                accountant_id=assigned_accountant.id,  # Distribute among accountants
                 is_active=True
             )
             db.add(business)
             db.flush()
             
+            # Add the assigned accountant to the business's accountants list
+            business.accountants.append(assigned_accountant)
+            
             # Create financial metrics
-            financial_metrics = BusinessFinancialMetrics(
-                business_id=business.id,
-                revenue=business_data['financialMetrics']['revenue'],
-                gross_profit=business_data['financialMetrics']['grossProfit'],
-                net_profit=business_data['financialMetrics']['netProfit'],
-                total_costs=business_data['financialMetrics']['totalCosts'],
-                percentage_change_revenue=business_data['financialMetrics']['percentageChangeRevenue'],
-                percentage_change_gross_profit=business_data['financialMetrics']['percentageChangeGrossProfit'],
-                percentage_change_net_profit=business_data['financialMetrics']['percentageChangeNetProfit'],
-                percentage_change_total_costs=business_data['financialMetrics']['percentageChangeTotalCosts']
-            )
-            db.add(financial_metrics)
+            if 'financialMetrics' in business_data:
+                fin_metrics = BusinessFinancialMetrics(
+                    business_id=business.id,
+                    revenue=business_data['financialMetrics'].get('revenue', 0),
+                    gross_profit=business_data['financialMetrics'].get('grossProfit', 0),
+                    net_profit=business_data['financialMetrics'].get('netProfit', 0),
+                    total_costs=business_data['financialMetrics'].get('totalCosts', 0),
+                    percentage_change_revenue=business_data['financialMetrics'].get('percentageChangeRevenue', 0),
+                    percentage_change_gross_profit=business_data['financialMetrics'].get('percentageChangeGrossProfit', 0),
+                    percentage_change_net_profit=business_data['financialMetrics'].get('percentageChangeNetProfit', 0),
+                    percentage_change_total_costs=business_data['financialMetrics'].get('percentageChangeTotalCosts', 0)
+                )
+                db.add(fin_metrics)
             
             # Create business metrics
-            business_metrics = BusinessMetrics(
-                business_id=business.id,
-                documents_due=business_data['metrics']['documentsDue'],
-                outstanding_invoices=business_data['metrics']['outstandingInvoices'],
-                pending_approvals=business_data['metrics']['pendingApprovals'],
-                accounting_year_end=parse_date(business_data['metrics']['accountingYearEnd'])
-            )
-            db.add(business_metrics)
+            if 'metrics' in business_data:
+                metrics = BusinessMetrics(
+                    business_id=business.id,
+                    documents_due=business_data['metrics'].get('documentsDue', 0),
+                    outstanding_invoices=business_data['metrics'].get('outstandingInvoices', 0),
+                    pending_approvals=business_data['metrics'].get('pendingApprovals', 0),
+                    accounting_year_end=parse_date(business_data['metrics'].get('accountingYearEnd', '31/12/2024'))
+                )
+                db.add(metrics)
         
         # Commit all changes
         db.commit()
-        
-        print("Sample data created successfully!")
-        print("\nDefault users created (matching frontend):")
-        print(f"Root Admin: email={users['1'].email}, password=password")
-        print(f"Super Accountant: email={users['2'].email}, password=password")
-        print(f"Accountant: email={users['3'].email}, password=password")
-        print(f"\nCreated {len(businesses_data)} businesses with full financial data")
-        print("All data matches your frontend test files exactly!")
+        print("Database initialized successfully!")
+        print(f"Created {len(users)} users:")
+        for role, user in users.items():
+            print(f"  - {role}: {user.email} (role: {user.role})")
+        print(f"Created {len(accountants)} accountant records")
+        print(f"Created {len(businesses_data)} businesses")
         
     except Exception as e:
-        print(f"Error creating sample data: {e}")
         db.rollback()
-        raise
+        print(f"Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         db.close()
 

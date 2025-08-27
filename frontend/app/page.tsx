@@ -1,38 +1,6 @@
 "use client";
-import Image from "next/image";
-import { useAuth } from "../context/AuthContext";
-import LoginForm from "../components/login-form"; // Importing the LoginForm component
-
-// export default function Home() {
-//   const { user, login, logout } = useAuth();
-
-//   return (
-//     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-//       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-
-//             {user ? (
-//               <div>
-//                 <p>Welcome, {user.name}!</p>
-//                 <button
-//                   className="bg-red-500 text-white px-4 py-2 rounded"
-//                   onClick={logout}
-//                 >
-//                   Logout
-//                 </button>
-//               </div>
-//             ) : (
-//               <LoginForm/>
-//             )}
-
-//       </main>
-//     </div>
-//   );
-// }
-
-// "use client"
 
 import Link from "next/link"
-import { Navigation } from "../components/navigation"
 import WaitlistForm from "@/components/wait-list-form";
 
 export default function Home() {
@@ -51,12 +19,6 @@ export default function Home() {
           </p>
 
           <div className="pt-8">
-            {/* <Link
-              href="/login"
-              className="bg-black text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-gray-800 transition-colors inline-block"
-            >
-              Try Artifact
-            </Link> */}
             <WaitlistForm />
           </div>
         </div>

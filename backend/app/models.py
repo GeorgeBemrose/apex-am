@@ -1,93 +1,97 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float, Date
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+import uuid
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+# Junction table for many-to-many relationship between businesses and accountants
+business_accountant = Table(
+    'business_accountant',
+    Base.metadata,
+    Column('business_id', String, ForeignKey('businesses.id'), primary_key=True),
+    Column('accountant_id', String, ForeignKey('accountants.id'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    role = Column(String)  # "root_admin", "super_accountant", "accountant"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="accountant")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationships
-    businesses = relationship("Business", back_populates="owner")
-    # Explicitly specify foreign_keys to avoid ambiguity
-    managed_accountants = relationship(
-        "Accountant", 
-        back_populates="super_accountant",
-        foreign_keys="Accountant.super_accountant_id"
-    )
 
 class Accountant(Base):
     __tablename__ = "accountants"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
-    super_accountant_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    super_accountant_id = Column(String, ForeignKey("accountants.id"), nullable=True)
     is_super_accountant = Column(Boolean, default=False)
-    first_name = Column(String)
-    last_name = Column(String)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
-    user = relationship("User", foreign_keys=[user_id])
-    super_accountant = relationship(
-        "User", 
-        foreign_keys=[super_accountant_id], 
-        back_populates="managed_accountants"
-    )
-    businesses = relationship("Business", back_populates="accountant")
+    user = relationship("User", primaryjoin="Accountant.user_id == User.id")
+    super_accountant = relationship("Accountant", remote_side=[id], backref="subordinate_accountants")
+    # Many-to-many relationship with businesses
+    businesses = relationship("Business", secondary=business_accountant, back_populates="accountants")
 
 class Business(Base):
     __tablename__ = "businesses"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    description = Column(String, nullable=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
-    accountant_id = Column(Integer, ForeignKey("accountants.id"), nullable=True)
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    owner_id = Column(String, ForeignKey("users.id"), nullable=False)
+    # Keep the primary accountant for backward compatibility
+    accountant_id = Column(String, ForeignKey("accountants.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
-    owner = relationship("User", back_populates="businesses")
-    accountant = relationship("Accountant", back_populates="businesses")
-    financial_metrics = relationship("BusinessFinancialMetrics", back_populates="business", uselist=False)
-    metrics = relationship("BusinessMetrics", back_populates="business", uselist=False)
+    owner = relationship("User", backref="owned_businesses")
+    # Primary accountant (for backward compatibility)
+    accountant = relationship("Accountant", foreign_keys=[accountant_id], backref="primary_managed_businesses")
+    # Multiple accountants through junction table
+    accountants = relationship("Accountant", secondary=business_accountant, back_populates="businesses")
 
 class BusinessFinancialMetrics(Base):
     __tablename__ = "business_financial_metrics"
-    id = Column(Integer, primary_key=True, index=True)
-    business_id = Column(Integer, ForeignKey("businesses.id"), unique=True)
-    revenue = Column(Float)
-    gross_profit = Column(Float)
-    net_profit = Column(Float)
-    total_costs = Column(Float)
-    percentage_change_revenue = Column(Float)
-    percentage_change_gross_profit = Column(Float)
-    percentage_change_net_profit = Column(Float)
-    percentage_change_total_costs = Column(Float)
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    business_id = Column(String, ForeignKey("businesses.id"), nullable=False)
+    revenue = Column(Integer, default=0)
+    gross_profit = Column(Integer, default=0)
+    net_profit = Column(Integer, default=0)
+    total_costs = Column(Integer, default=0)
+    percentage_change_revenue = Column(Integer, default=0)
+    percentage_change_gross_profit = Column(Integer, default=0)
+    percentage_change_net_profit = Column(Integer, default=0)
+    percentage_change_total_costs = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
-    business = relationship("Business", back_populates="financial_metrics")
+    business = relationship("Business", backref="financial_metrics")
 
 class BusinessMetrics(Base):
     __tablename__ = "business_metrics"
-    id = Column(Integer, primary_key=True, index=True)
-    business_id = Column(Integer, ForeignKey("businesses.id"), unique=True)
-    documents_due = Column(Integer)
-    outstanding_invoices = Column(Integer)
-    pending_approvals = Column(Integer)
-    accounting_year_end = Column(Date)
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    business_id = Column(String, ForeignKey("businesses.id"), nullable=False)
+    documents_due = Column(Integer, default=0)
+    outstanding_invoices = Column(Integer, default=0)
+    pending_approvals = Column(Integer, default=0)
+    accounting_year_end = Column(String, default="31/12/2024")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
-    business = relationship("Business", back_populates="metrics")
+    business = relationship("Business", backref="metrics")

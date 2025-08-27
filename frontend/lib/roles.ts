@@ -1,4 +1,3 @@
-
 export const Roles = {
     ROOT_ADMIN: 'root_admin',
     SUPER_ACCOUNTANT: 'super_accountant',

@@ -11,8 +11,8 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (user) {
-      router.push("/dashboard")
+    if (user && user.id) {
+      router.push("/dashboard");
     }
   }, [user, router])
 

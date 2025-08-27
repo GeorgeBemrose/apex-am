@@ -1,23 +1,19 @@
-import { Accountant } from "./accountant";
+import { User } from './user';
+import { Accountant } from './accountant';
+import { BusinessFinancialMetrics, BusinessMetrics } from './index';
 
 export interface Business {
-    id: string;
-    name: string;
-    financialMetrics: {
-        revenue: number;
-        grossProfit: number;
-        netProfit: number;
-        totalCosts: number;
-        percentageChangeRevenue: number;
-        percentageChangeGrossProfit: number;
-        percentageChangeNetProfit: number;
-        percentageChangeTotalCosts: number;
-    };
-    metrics: {
-        documentsDue: number;
-        outstandingInvoices: number;
-        pendingApprovals: number;
-        accountingYearEnd: string;
-    };
-    accountants: Array<Accountant>;
+  id: string;
+  name: string;
+  description?: string;
+  owner_id: string;
+  accountant_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+  owner: User;
+  accountant?: Accountant;
+  accountants?: Accountant[];
+  financial_metrics?: BusinessFinancialMetrics[];
+  metrics?: BusinessMetrics[];
 }

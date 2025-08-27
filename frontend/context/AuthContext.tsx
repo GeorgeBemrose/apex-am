@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
-import { authAPI, User, LoginCredentials } from "../lib/api";
+import { authAPI } from "../lib/api";
+import { User, LoginCredentials } from "../types";
 
 type AuthContextType = {
     user: User | null;
@@ -25,6 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fetchCurrentUser();
         }
     }, []);
+
+
 
     const fetchCurrentUser = async () => {
         try {
@@ -62,6 +65,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error('Login failed:', err);
             const errorMessage = err instanceof Error ? err.message : 'Login failed';
             setError(errorMessage);
+            
+            // Clear any stored token on failed login
+            localStorage.removeItem('access_token');
+            setUser(null); // Ensure user state is cleared on failed login
+            
             return false;
         } finally {
             setLoading(false);

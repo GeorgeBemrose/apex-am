@@ -9,7 +9,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Business } from '@/types/business';
+import { Business } from '../types';
 
 
 const ITEMS_PER_PAGE = 6;

@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app import models, schemas
@@ -26,7 +26,7 @@ def create_user(db: Session, user_data: dict):
             detail="Username or email already exists"
         )
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: str):
     """Get a user by ID."""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
@@ -44,7 +44,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     """Get a list of users with pagination."""
     return db.query(models.User).offset(skip).limit(limit).all()
 
-def update_user(db: Session, user_id: int, user_update_data: dict):
+def update_user(db: Session, user_id: str, user_update_data: dict):
     """Update a user."""
     db_user = get_user(db, user_id)
     
@@ -56,7 +56,7 @@ def update_user(db: Session, user_id: int, user_update_data: dict):
     db.refresh(db_user)
     return db_user
 
-def delete_user(db: Session, user_id: int):
+def delete_user(db: Session, user_id: str):
     """Delete a user."""
     db_user = get_user(db, user_id)
     db.delete(db_user)
@@ -79,7 +79,7 @@ def create_accountant(db: Session, accountant_data: dict):
             detail="Accountant already exists for this user"
         )
 
-def get_accountant(db: Session, accountant_id: int):
+def get_accountant(db: Session, accountant_id: str):
     """Get an accountant by ID."""
     accountant = db.query(models.Accountant).filter(models.Accountant.id == accountant_id).first()
     if not accountant:
@@ -89,21 +89,23 @@ def get_accountant(db: Session, accountant_id: int):
         )
     return accountant
 
-def get_accountant_by_user_id(db: Session, user_id: int):
+def get_accountant_by_user_id(db: Session, user_id: str):
     """Get an accountant by user ID."""
     return db.query(models.Accountant).filter(models.Accountant.user_id == user_id).first()
 
 def get_accountants(db: Session, skip: int = 0, limit: int = 100):
     """Get a list of accountants with pagination."""
-    return db.query(models.Accountant).offset(skip).limit(limit).all()
+    return db.query(models.Accountant).options(
+        joinedload(models.Accountant.user)
+    ).offset(skip).limit(limit).all()
 
-def get_accountants_by_super(db: Session, super_accountant_id: int, skip: int = 0, limit: int = 100):
+def get_accountants_by_super(db: Session, super_accountant_id: str, skip: int = 0, limit: int = 100):
     """Get accountants managed by a specific super accountant."""
     return db.query(models.Accountant).filter(
         models.Accountant.super_accountant_id == super_accountant_id
     ).offset(skip).limit(limit).all()
 
-def update_accountant(db: Session, accountant_id: int, accountant_update_data: dict):
+def update_accountant(db: Session, accountant_id: str, accountant_update_data: dict):
     """Update an accountant."""
     db_accountant = get_accountant(db, accountant_id)
     
@@ -115,7 +117,7 @@ def update_accountant(db: Session, accountant_id: int, accountant_update_data: d
     db.refresh(db_accountant)
     return db_accountant
 
-def delete_accountant(db: Session, accountant_id: int):
+def delete_accountant(db: Session, accountant_id: str):
     """Delete an accountant."""
     db_accountant = get_accountant(db, accountant_id)
     db.delete(db_accountant)
@@ -131,9 +133,15 @@ def create_business(db: Session, business_data: dict):
     db.refresh(db_business)
     return db_business
 
-def get_business(db: Session, business_id: int):
+def get_business(db: Session, business_id: str):
     """Get a business by ID."""
-    business = db.query(models.Business).filter(models.Business.id == business_id).first()
+    business = db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).filter(models.Business.id == business_id).first()
     if not business:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -143,21 +151,39 @@ def get_business(db: Session, business_id: int):
 
 def get_businesses(db: Session, skip: int = 0, limit: int = 100):
     """Get a list of businesses with pagination."""
-    return db.query(models.Business).offset(skip).limit(limit).all()
+    return db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).offset(skip).limit(limit).all()
 
-def get_businesses_by_owner(db: Session, owner_id: int, skip: int = 0, limit: int = 100):
+def get_businesses_by_owner(db: Session, owner_id: str, skip: int = 0, limit: int = 100):
     """Get businesses owned by a specific user."""
-    return db.query(models.Business).filter(
+    return db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).filter(
         models.Business.owner_id == owner_id
     ).offset(skip).limit(limit).all()
 
-def get_businesses_by_accountant(db: Session, accountant_id: int, skip: int = 0, limit: int = 100):
+def get_businesses_by_accountant(db: Session, accountant_id: str, skip: int = 0, limit: int = 100):
     """Get businesses managed by a specific accountant."""
-    return db.query(models.Business).filter(
+    return db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).filter(
         models.Business.accountant_id == accountant_id
     ).offset(skip).limit(limit).all()
 
-def update_business(db: Session, business_id: int, business_update_data: dict):
+def update_business(db: Session, business_id: str, business_update_data: dict):
     """Update a business."""
     db_business = get_business(db, business_id)
     
@@ -169,7 +195,7 @@ def update_business(db: Session, business_id: int, business_update_data: dict):
     db.refresh(db_business)
     return db_business
 
-def delete_business(db: Session, business_id: int):
+def delete_business(db: Session, business_id: str):
     """Delete a business."""
     db_business = get_business(db, business_id)
     db.delete(db_business)
@@ -177,7 +203,7 @@ def delete_business(db: Session, business_id: int):
     return db_business
 
 # Role management
-def assign_super_accountant(db: Session, user_id: int, super_accountant_id: int):
+def assign_super_accountant(db: Session, user_id: str, super_accountant_id: str):
     """Assign a super accountant to manage an accountant."""
     accountant = get_accountant_by_user_id(db, user_id)
     if not accountant:
@@ -191,7 +217,7 @@ def assign_super_accountant(db: Session, user_id: int, super_accountant_id: int)
     db.refresh(accountant)
     return accountant
 
-def remove_super_accountant(db: Session, user_id: int):
+def remove_super_accountant(db: Session, user_id: str):
     """Remove super accountant assignment from an accountant."""
     accountant = get_accountant_by_user_id(db, user_id)
     if not accountant:
@@ -204,3 +230,65 @@ def remove_super_accountant(db: Session, user_id: int):
     db.commit()
     db.refresh(accountant)
     return accountant
+
+def assign_accountant_to_business(db: Session, business_id: str, accountant_id: str):
+    """Assign an accountant to a business using the many-to-many relationship."""
+    business = get_business(db, business_id)
+    accountant = get_accountant(db, accountant_id)
+    
+    if not business:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Business not found"
+        )
+    
+    if not accountant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Accountant not found"
+        )
+    
+    # Add accountant to the many-to-many relationship
+    if accountant not in business.accountants:
+        business.accountants.append(accountant)
+        db.commit()
+        db.refresh(business)
+    
+    return business
+
+def remove_accountant_from_business(db: Session, business_id: str, accountant_id: str):
+    """Remove an accountant from a business using the many-to-many relationship."""
+    business = get_business(db, business_id)
+    accountant = get_accountant(db, accountant_id)
+    
+    if not business:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Business not found"
+        )
+    
+    if not accountant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Accountant not found"
+        )
+    
+    # Remove accountant from the many-to-many relationship
+    if accountant in business.accountants:
+        business.accountants.remove(accountant)
+        db.commit()
+        db.refresh(business)
+    
+    return business
+
+def get_user_businesses(db: Session, owner_id: str, skip: int = 0, limit: int = 100):
+    """Get businesses owned by a specific user."""
+    return db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).filter(
+        models.Business.owner_id == owner_id
+    ).offset(skip).limit(limit).all()
