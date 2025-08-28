@@ -3,7 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
-import { Button, TextField, Card, CardContent, Alert, InputAdornment, IconButton } from "@mui/material"
+
 import { useAuth } from "../context/AuthContext"
 import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline"
 
@@ -35,7 +35,7 @@ const LoginForm = () => {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            handleSubmit(e as any);
+                            handleSubmit(e);
                         }
                     }}
                     className={`w-full h-16 px-6 text-lg text-black bg-gray-50 border-2 ${error ? "border-red-500" : "border-gray-300"
@@ -53,7 +53,7 @@ const LoginForm = () => {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            handleSubmit(e as any);
+                            handleSubmit(e);
                         }
                     }}
                     className={`w-full h-16 px-6 pr-14 text-lg text-black bg-gray-50 border-2 ${error ? "border-red-500" : "border-gray-300"
@@ -64,7 +64,7 @@ const LoginForm = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeSlashIcon className="h-5 w-5" />}
+                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                 </button>
             </div>
             
@@ -82,7 +82,7 @@ const LoginForm = () => {
                         e.preventDefault();
                         alert("You should have remembered it!");
                     }}
-                    className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                    className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
                 >
                     Forgot password?
                 </a>
@@ -92,10 +92,10 @@ const LoginForm = () => {
                 type="button"
                 disabled={loading}
                 onClick={handleSubmit}
-                className={`w-full h-16 text-lg font-medium text-white rounded-full transition-colors ${
+                className={`w-full h-16 text-lg font-medium text-white rounded-full transition-all duration-300 ${
                     loading 
                         ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-slate-800 hover:bg-slate-900'
+                        : 'bg-gradient-to-r from-orange-500 to-purple-500 hover:from-orange-600 hover:to-purple-600 shadow-md hover:shadow-lg'
                 }`}
             >
                 {loading ? 'Logging in...' : 'Login'}
@@ -103,13 +103,13 @@ const LoginForm = () => {
             
             <div className="text-center text-sm text-black">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <a href="#" className="underline underline-offset-4 text-orange-500 hover:text-orange-600 transition-colors">
                     Sign up
                 </a>
             </div>
 
         </div>
-        <div className="text-blue-600 *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
+        <div className="text-blue-500 *:[a]:hover:text-blue-600 text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
       </div>

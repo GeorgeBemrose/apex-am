@@ -3,93 +3,65 @@
 import Link from "next/link"
 import { useAuth } from "../context/AuthContext";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { accountantsAPI } from "../lib/api";
-import { Roles } from "../lib/roles";
+import { UserDropdown } from "./user-dropdown";
 
 export function Navigation() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const pathname = usePathname();
-  const [firstName, setFirstName] = useState<string>("");
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      if (user && user.role !== Roles.ROOT_ADMIN) {
-        try {
-          // Get the accountant record to get the first name
-          const accountants = await accountantsAPI.getAll();
-          const userAccountant = accountants.find(acc => acc.user_id === user.id);
-          if (userAccountant?.first_name) {
-            setFirstName(userAccountant.first_name);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user info:', error);
-        }
-      }
-    };
-
-    fetchUserInfo();
-  }, [user]);
 
   if (pathname === "/login") {
     return null;
   }
 
-  const getWelcomeMessage = () => {
-    if (!user) return "";
-    if (user.role === Roles.ROOT_ADMIN) return `Welcome, Admin`;
-    if (firstName) return `Welcome, ${firstName}`;
-    return `Welcome, ${user.username}`;
-  };
+
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-      <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-          <span className="text-white font-bold text-sm">A</span>
+    <nav className="flex items-center justify-between px-8 py-5 bg-white/95 backdrop-blur-sm border-b border-gray-200/50 shadow-sm sticky top-0 z-50">
+      {/* Logo Section */}
+      <div className="flex items-center space-x-3 group">
+        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 via-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+          <span className="text-white font-bold text-lg">A</span>
         </div>
-        <span className="text-xl font-semibold text-gray-900">Apex AM</span>
+        <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+          Apex AM
+        </span>
       </div>
 
+      {/* Center Navigation - Demo Mode Indicator */}
       <div className="hidden md:flex items-center space-x-8">
-        {user && pathname !== "/" ? 
-        null 
-        :
-          (<>
-            <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
-              About us
-            </Link>
-            <Link href="#blog" className="text-gray-600 hover:text-gray-900 transition-colors">
-              Blog
-            </Link>
-            <Link href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">
-              Contact
-            </Link>
-          </>)
-        }
+        {user && (
+          <div className="flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-orange-100 to-purple-100 border border-orange-200 rounded-full">
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-orange-700">Demo Mode</span>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center space-x-4">
+      {/* Right Side - User Actions */}
+      <div className="flex items-center space-x-6">
         {user ? (
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">{getWelcomeMessage()}</span>
-            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <div className="flex items-center space-x-6">
+            <Link 
+              href="/dashboard" 
+              className="text-gray-700 hover:text-orange-500 font-medium transition-all duration-200 hover:scale-105"
+            >
               Dashboard
             </Link>
-            <button onClick={logout} className="text-gray-600 hover:text-gray-900 transition-colors">
-              Logout
-            </button>
+            <UserDropdown />
           </div>
         ) : (
           <>
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <Link 
+              href="/login" 
+              className="text-gray-700 hover:text-orange-500 font-medium transition-all duration-200 hover:scale-105"
+            >
               Login
             </Link>
             <Link
               href="/login"
-              className="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors"
+              className="bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:from-orange-600 hover:via-purple-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-0.5"
             >
-              Get started
+              Get Started
             </Link>
           </>
         )}

@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
     TableRow,
 } from "./ui/table";
 import { accountantsAPI, usersAPI } from '../lib/api';
-import { Accountant, User } from '../types';
-import { Select, MenuItem, Chip, IconButton, Tooltip, Alert, Snackbar } from '@mui/material';
+import { Select, MenuItem, Chip, Tooltip, Alert, Snackbar } from '@mui/material';
 import { Roles } from '../lib/roles';
 import { 
     UserGroupIcon, 
@@ -44,6 +42,13 @@ const ManageSuperDashboard = () => {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [usersPerPage] = useState(10);
+    
+    // Search state
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchUsers();
@@ -106,6 +111,8 @@ const ManageSuperDashboard = () => {
             
             // Refresh the list
             await fetchUsers();
+            // Reset to first page after role change
+            setCurrentPage(1);
         } catch (error) {
             console.error("Error updating user role:", error);
             setError('Failed to update user role');
@@ -156,6 +163,29 @@ const ManageSuperDashboard = () => {
             return <UserIcon className="h-5 w-5 text-gray-600" />;
         }
     };
+
+    // Search and filtering logic
+    const filteredUsers = users.filter(user => 
+        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Pagination logic
+    const indexOfLastUser = currentPage * usersPerPage;
+    const indexOfFirstUser = indexOfLastUser - usersPerPage;
+    const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const goToFirstPage = () => setCurrentPage(1);
+    const goToLastPage = () => setCurrentPage(totalPages);
+    const goToPreviousPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+    const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
 
     if (loading) {
         return (
@@ -258,10 +288,43 @@ const ManageSuperDashboard = () => {
                 {/* Main Table */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h2 className="text-lg font-semibold text-gray-900">User Role Management</h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Click on the role dropdown to change a user's status
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">User Role Management</h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Click on the role dropdown to change a user&apos;s status
+                                </p>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search users..."
+                                        value={searchTerm}
+                                        onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setCurrentPage(1); // Reset to first page when searching
+                                        }}
+                                        className="w-64 px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    {searchTerm && (
+                                        <button
+                                            onClick={() => {
+                                                setSearchTerm('');
+                                                setCurrentPage(1);
+                                            }}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            title="Clear search"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                    {filteredUsers.length} of {users.length} users
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <Table>
@@ -274,7 +337,7 @@ const ManageSuperDashboard = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {users.map((user) => (
+                            {currentUsers.map((user) => (
                                 <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
@@ -336,17 +399,17 @@ const ManageSuperDashboard = () => {
                                             <div className="flex items-center justify-center space-x-2">
                                                 {user.role === Roles.SUPER_ACCOUNTANT && (
                                                     <Tooltip title="Super Accountant - Can manage other accountants">
-                                                        <CheckCircleSolid className="h-5 w-5 text-green-500" />
+                                                        <CheckCircleSolid className="h-5 w-5 text-orange-500" />
                                                     </Tooltip>
                                                 )}
                                                 {user.role === Roles.ACCOUNTANT && (
                                                     <Tooltip title="Regular Accountant">
-                                                        <UserIcon className="h-5 w-5 text-gray-400" />
+                                                        <UserIcon className="h-5 w-5 text-blue-500" />
                                                     </Tooltip>
                                                 )}
                                                 {user.role === Roles.ROOT_ADMIN && (
                                                     <Tooltip title="Root Administrator - Full system access">
-                                                        <ShieldCheckIcon className="h-5 w-5 text-red-500" />
+                                                        <ShieldCheckIcon className="h-5 w-5 text-purple-500" />
                                                     </Tooltip>
                                                 )}
                                             </div>
@@ -356,6 +419,71 @@ const ManageSuperDashboard = () => {
                             ))}
                         </TableBody>
                     </Table>
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <div className="flex items-center justify-between">
+                                <div className="text-sm text-gray-700">
+                                    Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    {/* First Page Button */}
+                                    <button
+                                        onClick={goToFirstPage}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        First
+                                    </button>
+                                    
+                                    {/* Previous Page Button */}
+                                    <button
+                                        onClick={goToPreviousPage}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Previous
+                                    </button>
+                                    
+                                    {/* Page Numbers */}
+                                    <div className="flex items-center space-x-1">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                            <button
+                                                key={page}
+                                                onClick={() => handlePageChange(page)}
+                                                className={`px-3 py-2 text-sm font-medium rounded-md ${
+                                                    currentPage === page
+                                                        ? 'bg-gradient-to-r from-orange-500 to-purple-500 text-white'
+                                                        : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* Next Page Button */}
+                                    <button
+                                        onClick={goToNextPage}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Next
+                                    </button>
+                                    
+                                    {/* Last Page Button */}
+                                    <button
+                                        onClick={goToLastPage}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Last
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Success/Error Messages */}
