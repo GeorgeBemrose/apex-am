@@ -41,7 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 **/.venv
-**/__pycache__
+**/__pycache__/
+*.py[cod]
+*$py.class
 # Database files
 **/apex_am.db*
 **/*.db
