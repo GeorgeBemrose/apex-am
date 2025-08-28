@@ -166,10 +166,6 @@ async def api_info():
             "type": "JWT Bearer Token",
             "endpoint": "/auth/login",
             "description": "Use email and password to obtain JWT token"
-        },
-        "rate_limits": {
-            "requests_per_minute": 100,
-            "burst_limit": 20
         }
     }
 

@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 # SQLite database for development (can be changed to PostgreSQL/MySQL for production)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./apex_am.db"

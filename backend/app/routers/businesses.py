@@ -34,8 +34,14 @@ async def get_business(
         raise HTTPException(status_code=404, detail="Business not found")
     
     # Check permissions
-    if current_user.role == "accountant" and business.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user.role == "accountant":
+        # Accountants can view businesses they own OR businesses they're assigned to manage
+        if business.owner_id != current_user.id:
+            # Check if they're assigned to manage this business
+            from app.models import Accountant
+            accountant = db.query(Accountant).filter(Accountant.user_id == current_user.id).first()
+            if not accountant or accountant not in business.accountants:
+                raise HTTPException(status_code=403, detail="Access denied")
     
     return business
 
@@ -66,8 +72,14 @@ async def update_business(
         raise HTTPException(status_code=404, detail="Business not found")
     
     # Check permissions
-    if current_user.role == "accountant" and business.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user.role == "accountant":
+        # Accountants can update businesses they own OR businesses they're assigned to manage
+        if business.owner_id != current_user.id:
+            # Check if they're assigned to manage this business
+            from app.models import Accountant
+            accountant = db.query(Accountant).filter(Accountant.user_id == current_user.id).first()
+            if not accountant or accountant not in business.accountants:
+                raise HTTPException(status_code=403, detail="Access denied")
     
     business_data_dict = business_data.model_dump()
     updated_business = crud.update_business(db, business_id, business_data_dict)
@@ -80,7 +92,7 @@ async def update_business(
 @router.delete("/{business_id}")
 async def delete_business(
     business_id: str,
-    current_user: User = Depends(require_super_accountant_or_root),
+    current_user: User = Depends(require_super_accountant_or_root()),
     db: Session = Depends(get_db)
 ):
     business = crud.get_business(db, business_id)

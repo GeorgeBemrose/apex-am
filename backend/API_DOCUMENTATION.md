@@ -229,17 +229,6 @@ Some endpoints support filtering and sorting:
 ```http
 GET /businesses/?is_active=true&sort_by=name&sort_order=asc
 ```
-
-## Response Headers
-
-All responses include standard headers:
-
-- `Content-Type: application/json`
-- `X-Request-ID`: Unique request identifier for tracking
-- `X-RateLimit-Limit`: Rate limit for the endpoint
-- `X-RateLimit-Remaining`: Remaining requests in the current period
-- `X-RateLimit-Reset`: Time when the rate limit resets
-
 ## Testing
 
 ### Test Environment

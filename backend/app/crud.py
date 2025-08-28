@@ -105,6 +105,14 @@ def get_accountants_by_super(db: Session, super_accountant_id: str, skip: int = 
         models.Accountant.super_accountant_id == super_accountant_id
     ).offset(skip).limit(limit).all()
 
+def get_independent_accountants(db: Session, skip: int = 0, limit: int = 100):
+    """Get accountants that are not assigned to any super accountant."""
+    return db.query(models.Accountant).options(
+        joinedload(models.Accountant.user)
+    ).filter(
+        models.Accountant.super_accountant_id.is_(None)
+    ).offset(skip).limit(limit).all()
+
 def update_accountant(db: Session, accountant_id: str, accountant_update_data: dict):
     """Update an accountant."""
     db_accountant = get_accountant(db, accountant_id)
@@ -173,7 +181,8 @@ def get_businesses_by_owner(db: Session, owner_id: str, skip: int = 0, limit: in
 
 def get_businesses_by_accountant(db: Session, accountant_id: str, skip: int = 0, limit: int = 100):
     """Get businesses managed by a specific accountant."""
-    return db.query(models.Business).options(
+    # Get businesses where the accountant is the primary accountant (accountant_id)
+    primary_businesses = db.query(models.Business).options(
         joinedload(models.Business.owner),
         joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
         joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
@@ -181,7 +190,25 @@ def get_businesses_by_accountant(db: Session, accountant_id: str, skip: int = 0,
         joinedload(models.Business.metrics, innerjoin=False)
     ).filter(
         models.Business.accountant_id == accountant_id
-    ).offset(skip).limit(limit).all()
+    ).all()
+    
+    # Get businesses where the accountant is in the many-to-many relationship
+    many_to_many_businesses = db.query(models.Business).options(
+        joinedload(models.Business.owner),
+        joinedload(models.Business.accountant, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.accountants, innerjoin=False).joinedload(models.Accountant.user, innerjoin=False),
+        joinedload(models.Business.financial_metrics, innerjoin=False),
+        joinedload(models.Business.metrics, innerjoin=False)
+    ).filter(
+        models.Business.accountants.any(id=accountant_id)
+    ).all()
+    
+    # Combine both lists and remove duplicates
+    all_businesses = primary_businesses + many_to_many_businesses
+    unique_businesses = list({business.id: business for business in all_businesses}.values())
+    
+    # Apply pagination
+    return unique_businesses[skip:skip + limit]
 
 def update_business(db: Session, business_id: str, business_update_data: dict):
     """Update a business."""

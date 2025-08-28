@@ -12,6 +12,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., description="User's password (will be hashed)", example="securepassword123", min_length=8)
 
+class UserUpdate(BaseModel):
+    """Schema for updating user information."""
+    username: Optional[str] = Field(None, description="Unique username for the user", example="john_doe")
+    email: Optional[str] = Field(None, description="User's email address", example="john.doe@example.com")
+    role: Optional[str] = Field(None, description="User's role in the system", example="accountant")
+    is_active: Optional[bool] = Field(None, description="Whether the user account is active")
+
 class User(UserBase):
     id: str = Field(..., description="Unique identifier for the user", example="user_12345")
     created_at: Optional[datetime] = Field(None, description="Timestamp when user was created")
@@ -29,6 +36,13 @@ class User(UserBase):
                 "updated_at": "2024-01-20T14:45:00Z"
             }
         }
+
+class UserResponse(User):
+    """User response model that excludes sensitive fields."""
+    
+    class Config:
+        exclude = {"hashed_password"}
+        orm_mode = True
 
 class AccountantBase(BaseModel):
     first_name: Optional[str] = Field(None, description="Accountant's first name", example="John")

@@ -215,8 +215,7 @@ async def login_with_json(
             detail=f"Invalid JSON format: {str(e)}"
         )
     except Exception as e:
-        # Log the actual error for debugging
-        print(f"Login error: {type(e).__name__}: {str(e)}")
+        # Log the actual error for monitoring (remove in production if not needed)
         import traceback
         traceback.print_exc()
         raise HTTPException(

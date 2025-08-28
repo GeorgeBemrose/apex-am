@@ -135,6 +135,8 @@ def init_db():
             
             # Add the assigned accountant to the business's accountants list
             business.accountants.append(assigned_accountant)
+            # Flush to ensure the relationship is persisted
+            db.flush()
             
             # Create financial metrics
             if 'financialMetrics' in business_data:

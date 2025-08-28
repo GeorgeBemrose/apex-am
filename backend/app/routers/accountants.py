@@ -17,10 +17,24 @@ async def get_accountants(
     if current_user.role == "root_admin":
         accountants = crud.get_accountants(db, skip=skip, limit=limit)
     elif current_user.role == "super_accountant":
-        # Super accountants can see accountants they manage
+        # Super accountants can see all accountants so they can assign them to businesses
+        # They can see accountants they manage plus independent accountants
         accountant = crud.get_accountant_by_user_id(db, current_user.id)
         if accountant:
-            accountants = crud.get_accountants_by_super(db, accountant.id, skip=skip, limit=limit)
+            # Get accountants they manage
+            managed_accountants = crud.get_accountants_by_super(db, accountant.id, skip=skip, limit=limit)
+            # Get independent accountants (not assigned to any super accountant)
+            independent_accountants = crud.get_independent_accountants(db, skip=skip, limit=limit)
+            # Combine both lists, avoiding duplicates
+            all_accountants = managed_accountants + independent_accountants
+            # Remove duplicates based on ID
+            seen_ids = set()
+            unique_accountants = []
+            for acc in all_accountants:
+                if acc.id not in seen_ids:
+                    seen_ids.add(acc.id)
+                    unique_accountants.append(acc)
+            accountants = unique_accountants
         else:
             accountants = []
     else:
@@ -49,7 +63,7 @@ async def get_accountant(
 @router.post("/")
 async def create_accountant(
     accountant_data: schemas.AccountantCreate,
-    current_user: User = Depends(require_super_accountant_or_root),
+    current_user: User = Depends(require_super_accountant_or_root()),
     db: Session = Depends(get_db)
 ):
     accountant = crud.create_accountant(db, accountant_data.model_dump())
@@ -59,7 +73,7 @@ async def create_accountant(
 async def update_accountant(
     accountant_id: str,
     accountant_data: schemas.AccountantCreate,
-    current_user: User = Depends(require_super_accountant_or_root),
+    current_user: User = Depends(require_super_accountant_or_root()),
     db: Session = Depends(get_db)
 ):
     accountant = crud.get_accountant(db, accountant_id)
@@ -81,7 +95,7 @@ async def update_accountant(
 @router.delete("/{accountant_id}")
 async def delete_accountant(
     accountant_id: str,
-    current_user: User = Depends(require_super_accountant_or_root),
+    current_user: User = Depends(require_super_accountant_or_root()),
     db: Session = Depends(get_db)
 ):
     accountant = crud.get_accountant(db, accountant_id)

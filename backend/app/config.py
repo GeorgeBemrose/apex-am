@@ -33,12 +33,7 @@ A comprehensive **Accounting Management System API** with role-based access cont
 2. **Authorization**: Include token in `Authorization: Bearer <token>` header
 3. **API Endpoints**: Explore available endpoints below
 
-## Rate Limiting
 
-- **Standard**: 100 requests per minute
-- **Burst**: Up to 20 requests in a short period
-
-For detailed usage examples and SDKs, visit our [Developer Portal](https://developers.apex-am.com).
 """)
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
 

@@ -295,8 +295,9 @@ Import the Postman collection from `development_utils/`:
 
 ### Hot Reloading
 - **Backend**: Uvicorn with `--reload` flag for automatic restart
-- **Frontend**: Next.js development server with hot reloading
+- **Frontend**: Next.js development server with hot reloading (`npm run dev`)
 - **Docker**: Volume mounts for immediate code changes
+- **Development Mode**: Uses `Dockerfile.dev` for optimal development experience
 
 ### Code Quality
 ```bash
