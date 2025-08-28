@@ -28,10 +28,10 @@ const demoUsers: DemoUser[] = [
     color: 'from-purple-500 to-purple-600'
   },
   {
-    email: 'accountant@example.com',
+    email: 'p.jones@example.com',
     password: 'password',
     role: Roles.ACCOUNTANT,
-    displayName: 'Accountant',
+    displayName: 'P. Jones (Accountant)',
     color: 'from-blue-500 to-blue-600'
   }
 ];
