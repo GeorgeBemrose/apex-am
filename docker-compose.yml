@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: apex_am_backend
+    environment:
+      # Database configuration (SQLite for development)
+      DATABASE_URL: sqlite:///./apex_am.db
+      # Security
+      SECRET_KEY: dev-secret-key-change-in-production
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      # CORS
+      CORS_ORIGINS: "http://localhost:3000,http://frontend:3000"
+      # Environment
+      ENVIRONMENT: development
+      DEBUG: true
+      # Logging
+      LOG_LEVEL: DEBUG
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+      - /app/.pytest_cache
+      - backend_data:/app/data
+    networks:
+      - apex_am_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: apex_am_frontend
+    environment:
+      # API configuration
+      NEXT_PUBLIC_API_URL: http://backend:8000
+      NEXT_PUBLIC_APP_NAME: Apex AM
+      # Environment
+      NODE_ENV: development
+      # Next.js configuration
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - apex_am_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+volumes:
+  backend_data:
+    driver: local
+
+networks:
+  apex_am_network:
+    driver: bridge
