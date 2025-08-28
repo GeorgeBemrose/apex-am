@@ -1,8 +1,47 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* Base styles to prevent layout issues */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure proper stacking context */
+#__next {
+  position: relative;
+  z-index: 1;
+}
+
+/* Line clamp utilities for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
 
 
 @custom-variant dark (&:is(.dark *));
@@ -80,6 +119,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Artifact Brand Colors */
+  --artifact-orange: #FF6B35;
+  --artifact-purple: #8B5CF6;
+  --artifact-blue: #3B82F6;
+  --artifact-orange-light: #FF8A65;
+  --artifact-purple-light: #A78BFA;
+  --artifact-blue-light: #60A5FA;
 }
 
 .dark {

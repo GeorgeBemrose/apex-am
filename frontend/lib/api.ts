@@ -1,6 +1,10 @@
 // API service layer for communicating with FastAPI backend
 import { User, Business, Accountant, BusinessFinancialMetrics, BusinessMetrics, LoginCredentials, AuthResponse, ApiError } from '../types';
 
+interface ApiErrorWithStatus extends Error {
+  response: { status: number };
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 const API_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000');
 
@@ -16,7 +20,9 @@ const getAuthHeaders = (): HeadersInit => {
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    const error = new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    (error as ApiErrorWithStatus).response = { status: response.status };
+    throw error;
   }
   return response.json();
 };

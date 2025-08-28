@@ -1,0 +1,24 @@
+# Development Dockerfile for Next.js frontend with hot reloading
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Start development server with hot reloading
+CMD ["npm", "run", "dev"]

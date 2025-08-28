@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { businessesAPI, accountantsAPI } from '../../lib/api';
-import { Business } from '../../types';
+import { Business, Accountant } from '../../types';
 import BusinessCard from '../../components/business-card';
 import ManageSuperDashboard from '../../components/manage-super-dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
@@ -20,20 +20,9 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
   const [activeTab, setActiveTab] = useState("businesses");
-  const [accountants, setAccountants] = useState<any[]>([]);
+  const [accountants, setAccountants] = useState<Accountant[]>([]);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    console.log('useEffect triggered, user:', user);
-    fetchBusinesses();
-    fetchAccountants();
-  }, [user, router]);
-
-  const fetchBusinesses = async () => {
+  const fetchBusinesses = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -59,9 +48,9 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchAccountants = async () => {
+  const fetchAccountants = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -71,12 +60,19 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Failed to fetch accountants:', err);
     }
-  };
+  }, [user]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
+  // Add useEffect after function definitions to avoid dependency issues
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    console.log('useEffect triggered, user:', user);
+    fetchBusinesses();
+    fetchAccountants();
+  }, [user, router, fetchBusinesses, fetchAccountants]);
 
   // Filter businesses based on search term
   const filteredBusinesses = businesses.filter(business =>
@@ -205,7 +201,7 @@ function BusinessDashboardContent({
   totalBusinesses,
   onRefresh
 }: { 
-  businesses: any[];
+  businesses: Business[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   currentPage: number;
@@ -241,10 +237,9 @@ function BusinessDashboardContent({
 
       {/* Business Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {businesses.map((business, index) => (
+        {businesses.map((business) => (
           <BusinessCard 
             key={business.id} 
-            index={index}
             business={business}
             onRefresh={onRefresh}
           />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete, Button as MuiButton } from '@mui/material';
 import { Button } from './ui/button';
 import {
@@ -47,12 +47,6 @@ const AccountantsDialog: React.FC<AccountantsDialogProps> = ({ open, onClose, bu
     const [isOperationInProgress, setIsOperationInProgress] = useState(false);
     const [allocatedAccountants, setAllocatedAccountants] = useState<Accountant[]>(accountants);
     
-    useEffect(() => {
-        if (open) {
-            fetchAvailableAccountants();
-        }
-    }, [open]);
-
     // Show toast for 3 seconds
     useEffect(() => {
         if (toast) {
@@ -68,7 +62,7 @@ const AccountantsDialog: React.FC<AccountantsDialogProps> = ({ open, onClose, bu
         }
     };
 
-    const fetchAvailableAccountants = async () => {
+    const fetchAvailableAccountants = useCallback(async () => {
         try {
             setLoading(true);
             const allAccountants = await accountantsAPI.getAll();
@@ -93,7 +87,14 @@ const AccountantsDialog: React.FC<AccountantsDialogProps> = ({ open, onClose, bu
         } finally {
             setLoading(false);
         }
-    };
+    }, [accountants]);
+
+    // Add useEffect after function definition to avoid dependency issues
+    useEffect(() => {
+        if (open) {
+            fetchAvailableAccountants();
+        }
+    }, [open, fetchAvailableAccountants]);
 
     const handleAddAccountant = async () => {
         if (!selectedAccountant) return;

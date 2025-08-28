@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Apex AM",
   description: "Accountant Management System",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', type: 'image/x-icon' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.svg'
+  }
 };
 
 export default function RootLayout({
