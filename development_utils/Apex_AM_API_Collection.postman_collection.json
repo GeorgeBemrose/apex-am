@@ -85,20 +85,34 @@
 					},
 					"response": []
 				},
-				{
-					"name": "Health Check",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/health",
-							"host": ["{{base_url}}"],
-							"path": ["health"]
-						},
-						"description": "Health check endpoint"
-					},
-					"response": []
-				}
+						{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": ["{{base_url}}"],
+					"path": ["health"]
+				},
+				"description": "Health check endpoint"
+			},
+			"response": []
+		},
+		{
+			"name": "API Info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api-info",
+					"host": ["{{base_url}}"],
+					"path": ["api-info"]
+				},
+				"description": "Get detailed API information including features and capabilities"
+			},
+			"response": []
+		}
 			],
 			"description": "Basic API information and health check endpoints"
 		},
