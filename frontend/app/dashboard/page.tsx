@@ -55,7 +55,6 @@ export default function DashboardPage() {
     
     try {
       const accountantsData = await accountantsAPI.getAll();
-      console.log('Fetched accountants:', accountantsData);
       setAccountants(accountantsData);
     } catch (err) {
       console.error('Failed to fetch accountants:', err);
@@ -69,7 +68,6 @@ export default function DashboardPage() {
       return;
     }
 
-    console.log('useEffect triggered, user:', user);
     fetchBusinesses();
     fetchAccountants();
   }, [user, router, fetchBusinesses, fetchAccountants]);

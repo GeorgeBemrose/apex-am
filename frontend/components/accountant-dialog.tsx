@@ -117,7 +117,6 @@ const AccountantsDialog: React.FC<AccountantsDialogProps> = ({ open, onClose, bu
                 throw new Error(`Failed to add accountant: ${response.statusText}`);
             }
             
-            console.log(`Accountant ${selectedAccountant.id} added to business ${businessId}`);
             setSelectedAccountant(null);
             
             // Show success toast first
@@ -162,11 +161,8 @@ const AccountantsDialog: React.FC<AccountantsDialogProps> = ({ open, onClose, bu
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.log('Error response body:', errorText);
                 throw new Error(`Failed to remove accountant: ${response.statusText}`);
             }
-            
-            console.log(`Accountant ${accountantId} removed from business ${businessId}`);
             
             // Show success toast first
             setToast({ type: 'success', message: `Accountant removed successfully!` });
