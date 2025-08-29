@@ -66,7 +66,7 @@ async def create_accountant(
     current_user: User = Depends(require_super_accountant_or_root()),
     db: Session = Depends(get_db)
 ):
-    accountant = crud.create_accountant(db, accountant_data.model_dump())
+    accountant = crud.create_accountant(db, accountant_data.dict())
     return accountant
 
 @router.put("/{accountant_id}")
@@ -85,7 +85,7 @@ async def update_accountant(
         if accountant.super_accountant_id != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
     
-    updated_accountant = crud.update_accountant(db, accountant_id, accountant_data.model_dump())
+    updated_accountant = crud.update_accountant(db, accountant_id, accountant_data.dict())
     
     if not updated_accountant:
         raise HTTPException(status_code=500, detail="Failed to update accountant")

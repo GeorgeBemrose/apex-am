@@ -54,7 +54,7 @@ async def create_business(
     if current_user.role not in ["root_admin", "super_accountant"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    business_data_dict = business_data.model_dump()
+    business_data_dict = business_data.dict()
     business_data_dict["owner_id"] = current_user.id
     
     business = crud.create_business(db, business_data_dict)
@@ -81,7 +81,7 @@ async def update_business(
             if not accountant or accountant not in business.accountants:
                 raise HTTPException(status_code=403, detail="Access denied")
     
-    business_data_dict = business_data.model_dump()
+    business_data_dict = business_data.dict()
     updated_business = crud.update_business(db, business_id, business_data_dict)
     
     if not updated_business:
