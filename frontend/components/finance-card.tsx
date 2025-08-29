@@ -9,7 +9,19 @@ interface FinanceCardProps {
 
 const FinanceCard: React.FC<FinanceCardProps> = ({ metric, percentageChange, title }) => {    
     // For Total Costs, an increase (positive change) is bad, so we invert the logic
-    const isPositive = title === 'Total Costs' ? percentageChange < 0 : percentageChange > 0;
+    // For other metrics, an increase (positive change) is good
+    let isPositive: boolean;
+    
+    if (title === 'Total Costs') {
+        // For costs: negative change (decrease) = good (green), positive change (increase) = bad (red)
+        isPositive = percentageChange < 0;
+    } else {
+        // For revenue/profit: positive change (increase) = good (green), negative change (decrease) = bad (red)
+        isPositive = percentageChange > 0;
+    }
+    
+
+    
     const colorClass = isPositive ? 'text-green-600' : 'text-red-600';
     const bgColorClass = isPositive ? 'bg-green-50' : 'bg-red-50';
     const borderColorClass = isPositive ? 'border-green-200' : 'border-red-200';
@@ -25,12 +37,13 @@ const FinanceCard: React.FC<FinanceCardProps> = ({ metric, percentageChange, tit
                     ${metric.toLocaleString()}
                 </span>
                 <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${bgColorClass} ${colorClass}`}>
-                    {isPositive ? (
+                    {/* Arrow direction should reflect actual change direction, not whether it's good/bad */}
+                    {percentageChange > 0 ? (
                         <ArrowUpIcon className="h-3 w-3" />
                     ) : (
                         <ArrowDownIcon className="h-3 w-3" />
                     )}
-                    <span>{Math.abs(percentageChange)}%</span>
+                    <span>{percentageChange}%</span>
                 </div>
             </div>
         </div>
