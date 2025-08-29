@@ -97,7 +97,7 @@ export default function DashboardPage() {
     if (user.role === Roles.ROOT_ADMIN) {
       return [
         { value: "businesses", label: "Businesses", content: <BusinessDashboardContent businesses={currentBusinesses} searchTerm={searchTerm} setSearchTerm={setSearchTerm} currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} totalBusinesses={filteredBusinesses.length} onRefresh={fetchBusinesses} /> },
-        { value: "manageSuper", label: "Manage Super Accountants", content: <ManageSuperDashboard /> },
+        { value: "manageSuper", label: "Accountants", content: <ManageSuperDashboard /> },
       ];
     } else if (user.role === Roles.SUPER_ACCOUNTANT || user.role === Roles.ACCOUNTANT) {
       return [
@@ -133,15 +133,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {activeTab === "businesses" ? `Businesses (${filteredBusinesses.length})` : `Accountants (${accountants?.length || 0})`}
-            </h2>
-            
-          </div>
-        </div>
-
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -154,9 +145,13 @@ export default function DashboardPage() {
           </div>
         ) : businesses.length > 0 ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:grid-cols-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border border-blue-200 shadow-sm">
               {userTabs?.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
+                <TabsTrigger 
+                  key={tab.value} 
+                  value={tab.value}
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:scale-105 text-gray-700 hover:text-blue-600 transition-all duration-300 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-blue-100 hover:scale-102"
+                >
                   {tab.label}
                 </TabsTrigger>
               ))}
@@ -209,9 +204,9 @@ function BusinessDashboardContent({
   onRefresh: () => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Search Bar */}
-      <div className="flex justify-center items-center space-x-4">
+      <div className="w-full flex justify-center items-center space-x-4">
         <div className="flex-1 max-w-md">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -234,19 +229,21 @@ function BusinessDashboardContent({
       </div>
 
       {/* Business Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {businesses.map((business) => (
-          <BusinessCard 
-            key={business.id} 
-            business={business}
-            onRefresh={onRefresh}
-          />
-        ))}
+      <div className="w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {businesses.map((business) => (
+            <BusinessCard 
+              key={business.id} 
+              business={business}
+              onRefresh={onRefresh}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="w-full flex items-center justify-between">
           <div className="text-sm text-gray-700">
             Showing page {currentPage} of {totalPages}
           </div>
